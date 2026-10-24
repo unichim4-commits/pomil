@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+/* Bộ nhận diện Pomil v2 (10/2026): năm màu lấy từ quả bưởi.
+   Than chì và Xương chiếm 3/4 thiết kế; Vỏ bưởi là điểm nhấn duy nhất; Ruột bưởi chỉ trang trí, không dùng cho chữ. */
+@theme {
+  --color-graphite: #1e2420;
+  --color-bone: #f3f0ea;
+  --color-pith: #e4dfd5;
+  --color-rind: #6e7b5e;
+  --color-blush: #e2b8a8;
+  --color-paper: #faf8f4;
+  --color-ink-soft: #4a514c;
+  --color-line: #d6d0c4;
+  --color-danger: #9a3b2c;
+  --color-ok: #4f6b3f;
+
+  /* Tên cũ giữ lại để các trang đầu tiên vẫn đúng màu */
+  --color-forest: #1e2420;
+  --color-cream: #f3f0ea;
+  --color-sage: #6e7b5e;
+
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-bone);
+    color: var(--color-graphite);
+    font-family: var(--font-sans);
+    font-weight: 400;
+  }
+  ::selection {
+    background: var(--color-rind);
+    color: var(--color-bone);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-rind);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Nhãn chữ nhỏ giãn 0,24em như trên bao bì */
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+  .display {
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
+  }
+  .accent-serif {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  /* Vân túi tinh dầu */
+  .dots {
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-rind) 55%, transparent) 1.1px, transparent 1.3px);
+    background-size: 14px 14px;
+  }
+  .dots-dark {
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--color-bone) 40%, transparent) 1.1px, transparent 1.3px);
+    background-size: 14px 14px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 1px solid var(--color-graphite);
+    transition:
+      background-color 0.15s,
+      color 0.15s,
+      opacity 0.15s;
+    cursor: pointer;
+  }
+  /* Giữ chữ "đ" của giá tiền thường khi nút viết hoa */
+  .btn .price {
+    text-transform: none;
+    letter-spacing: 0.04em;
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-graphite);
+    color: var(--color-bone);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #2e3631;
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--color-graphite);
+  }
+  .btn-outline:hover:not(:disabled) {
+    background: var(--color-graphite);
+    color: var(--color-bone);
+  }
+  .btn-light {
+    background: var(--color-bone);
+    color: var(--color-graphite);
+    border-color: var(--color-bone);
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+  }
+  .field {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.75rem;
+    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    color: var(--color-graphite);
+    font-size: 1rem;
+  }
+  .field:focus {
+    border-color: var(--color-graphite);
+    outline: none;
+  }
+  textarea.field {
+    min-height: 6rem;
+    line-height: 1.6;
+  }
+
+  /* Nội dung soạn bằng markdown */
+  .prose-pomil {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--color-ink-soft);
+  }
+  .prose-pomil > * + * {
+    margin-top: 1rem;
+  }
+  .prose-pomil h2 {
+    margin-top: 2.25rem;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--color-graphite);
+    letter-spacing: -0.01em;
+  }
+  .prose-pomil h3 {
+    margin-top: 1.75rem;
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: var(--color-graphite);
+  }
+  .prose-pomil ul {
+    list-style: none;
+    padding: 0;
+  }
+  .prose-pomil ul li {
+    position: relative;
+    padding-left: 1.25rem;
+  }
+  .prose-pomil ul li + li,
+  .prose-pomil ol li + li {
+    margin-top: 0.35rem;
+  }
+  .prose-pomil ul li::before {
+    content: "";
+    position: absolute;
+    left: 0.15rem;
+    top: 0.72em;
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: 999px;
+    background: var(--color-rind);
+  }
+  .prose-pomil ol {
+    list-style: decimal;
+    padding-left: 1.4rem;
+  }
+  .prose-pomil a {
+    color: var(--color-graphite);
+    text-decoration: underline;
+    text-decoration-color: var(--color-rind);
+    text-underline-offset: 3px;
+  }
+  .prose-pomil strong {
+    color: var(--color-graphite);
+    font-weight: 500;
+  }
+  .prose-pomil blockquote {
+    border-left: 2px solid var(--color-rind);
+    padding-left: 1rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.35rem;
+    color: var(--color-graphite);
+  }
+}
