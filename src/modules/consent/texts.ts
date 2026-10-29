@@ -7,3 +7,7 @@ export const CHECKOUT_DATA_CONSENT_TEXT =
   "Tôi đồng ý để Pomil dùng tên, số điện thoại và địa chỉ để xử lý, giao đơn hàng và hỗ trợ sau mua theo chính sách dữ liệu cá nhân.";
 export const CHECKOUT_MARKETING_CONSENT_TEXT =
   "Nhắn tôi qua Zalo hoặc tin nhắn: hướng dẫn dùng, nhắc khi sắp hết chai và tin về lô mới. Tôi có thể dừng bất cứ lúc nào.";
+
+// Ở trang tạo tài khoản. Bắt buộc, vì cần lưu số điện thoại và tên để đăng nhập.
+export const ACCOUNT_DATA_CONSENT_TEXT =
+  "Tôi đồng ý để Pomil lưu tên và số điện thoại để đăng nhập, xem lại đơn và ghi nhận đánh giá của tôi theo chính sách dữ liệu cá nhân.";

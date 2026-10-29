@@ -12,7 +12,8 @@ export type Permission =
   | "customers.view_phone"
   | "settings.write"
   | "staff.manage"
-  | "audit.view";
+  | "audit.view"
+  | "reviews.write";
 
 const COLLABORATOR: readonly Permission[] = [
   "orders.write",
@@ -22,6 +23,7 @@ const COLLABORATOR: readonly Permission[] = [
   "complaints.write",
   "customers.write",
   "customers.view_phone",
+  "reviews.write",
 ];
 
 export const ROLE_LABEL: Record<StaffRole, string> = {

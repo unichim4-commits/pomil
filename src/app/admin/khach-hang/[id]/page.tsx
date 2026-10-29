@@ -10,7 +10,8 @@ import { getCustomerDetail, STAGE_LABEL } from "@/modules/customers/admin";
 import { ORDER_STATUS_LABEL } from "@/modules/orders/rules";
 import { ActionForm } from "../../_components/action-form";
 import { Badge, Card, ORDER_TONE, Table } from "../../_components/ui";
-import { stageAction, withdrawConsentAction } from "../actions";
+import { accountForCustomer } from "@/modules/accounts/service";
+import { resetCustomerPasswordAction, stageAction, withdrawConsentAction } from "../actions";
 
 export const metadata: Metadata = { title: "Hồ sơ khách" };
 
@@ -21,13 +22,14 @@ const PURPOSE: Record<string, string> = {
   trial_participation: "Tham gia dùng thử",
 };
 
-const TOUCH: Record<string, string> = { waitlist_signup: "Đăng ký chờ", order_placed: "Đặt đơn" };
+const TOUCH: Record<string, string> = { waitlist_signup: "Đăng ký chờ", order_placed: "Đặt đơn", account_created: "Tạo tài khoản" };
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [staff, detail] = await Promise.all([requireStaff(), getCustomerDetail(id)]);
   if (!detail) notFound();
   const { customer: c, orders, consents, timeline } = detail;
+  const account = await accountForCustomer(c.id);
   const showPhone = can(staff.role, "customers.view_phone");
   const canWrite = can(staff.role, "customers.write");
   const marketingOn = hasActiveConsent(
@@ -129,6 +131,29 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                   ))}
                 </select>
               </ActionForm>
+            )}
+          </Card>
+
+          <Card title="Tài khoản website">
+            {account ? (
+              <>
+                <p className="text-sm">
+                  Có tài khoản từ {formatDateTime(account.createdAt)}. Đăng nhập gần nhất: {account.lastLoginAt ? formatDateTime(account.lastLoginAt) : "chưa"}.
+                </p>
+                {canWrite && (
+                  <ActionForm
+                    action={resetCustomerPasswordAction}
+                    submitLabel="Đặt mật khẩu tạm"
+                    className="mt-4"
+                    submitClassName="btn btn-outline min-h-11"
+                    confirm="Chỉ làm khi khách nhắn từ đúng số đã đăng ký. Đặt mật khẩu tạm và đăng xuất khách khỏi mọi máy?"
+                  >
+                    <input type="hidden" name="customerId" value={c.id} />
+                  </ActionForm>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-ink-soft">Khách chưa tạo tài khoản, mua dạng khách vãng lai.</p>
             )}
           </Card>
 

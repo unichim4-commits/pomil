@@ -34,6 +34,8 @@ export type PlaceOrderInput = {
   consentTexts: { dataProcessing: string; marketing: string };
   utm: Utm | null;
   landingVariant: string | null;
+  // Khách đang đăng nhập: gắn đơn vào tài khoản để hiện trong trang Tài khoản
+  accountId?: string | null;
 };
 
 export type PlaceOrderResult =
@@ -119,6 +121,7 @@ async function placeOrderOnce(input: PlaceOrderInput, store: StoreSettings): Pro
         total: priced.total,
         utm: input.utm,
         accessToken,
+        accountId: input.accountId ?? null,
       })
       .returning({ id: orders.id });
     const orderId = order!.id;

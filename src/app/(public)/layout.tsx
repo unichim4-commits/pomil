@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand";
 import { NavProgress } from "@/components/nav-progress";
+import { currentCustomer } from "@/modules/accounts/service";
 import { cartCount } from "@/modules/cart/rules";
 import { readCart } from "@/modules/cart/service";
 import { listFooterPages } from "@/modules/content/service";
@@ -18,7 +19,7 @@ const NAV = [
 ];
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [settings, cart, footerPages] = await Promise.all([getSettings(), readCart(), listFooterPages()]);
+  const [settings, cart, footerPages, me] = await Promise.all([getSettings(), readCart(), listFooterPages(), currentCustomer()]);
   const count = cartCount(cart);
   const social = [
     { href: settings.tiktok, label: "TikTok" },
@@ -44,8 +45,11 @@ export default async function PublicLayout({ children }: { children: React.React
                   {item.label}
                 </Link>
               ))}
-              <Link href="/tra-cuu-don" className="block py-3 text-base">
+              <Link href="/tra-cuu-don" className="block border-b border-line/60 py-3.5 text-base">
                 Tra cứu đơn hàng
+              </Link>
+              <Link href={me ? "/tai-khoan" : "/tai-khoan/dang-nhap"} className="block py-3 text-base">
+                {me ? "Tài khoản của tôi" : "Đăng nhập / Tạo tài khoản"}
               </Link>
             </nav>
           </details>
@@ -65,6 +69,9 @@ export default async function PublicLayout({ children }: { children: React.React
           <div className="ml-auto flex items-center gap-5 text-sm">
             <Link href="/tra-cuu-don" className="hidden min-h-11 items-center text-ink-soft hover:text-graphite sm:inline-flex">
               Tra cứu đơn
+            </Link>
+            <Link href={me ? "/tai-khoan" : "/tai-khoan/dang-nhap"} className="hidden min-h-11 items-center text-ink-soft hover:text-graphite sm:inline-flex">
+              {me ? (me.name ? me.name.split(/\s+/).pop() : "Tài khoản") : "Đăng nhập"}
             </Link>
             <Link href="/gio-hang" className="-my-2 flex min-h-11 items-center gap-2 py-2" aria-label={`Giỏ hàng, ${count} sản phẩm`}>
               <span className="eyebrow">Giỏ</span>

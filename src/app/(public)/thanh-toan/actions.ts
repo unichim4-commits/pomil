@@ -8,6 +8,7 @@ import { normalizeVnPhone } from "@/lib/phone";
 import { VN_PROVINCES } from "@/lib/provinces";
 import { decodeUtmCookie, UTM_COOKIE } from "@/lib/utm";
 import { VARIANT_COOKIE } from "@/lib/variant";
+import { currentCustomer } from "@/modules/accounts/service";
 import { readCart, writeCart } from "@/modules/cart/service";
 import { CHECKOUT_DATA_CONSENT_TEXT, CHECKOUT_MARKETING_CONSENT_TEXT } from "@/modules/consent/texts";
 import { describeCartProblem } from "@/modules/orders/rules";
@@ -49,6 +50,7 @@ export async function checkoutAction(_prev: CheckoutState, formData: FormData): 
   }
 
   const cookieStore = await cookies();
+  const me = await currentCustomer();
   let result;
   try {
     result = await placeOrder(
@@ -66,6 +68,7 @@ export async function checkoutAction(_prev: CheckoutState, formData: FormData): 
         consentTexts: { dataProcessing: CHECKOUT_DATA_CONSENT_TEXT, marketing: CHECKOUT_MARKETING_CONSENT_TEXT },
         utm: decodeUtmCookie(cookieStore.get(UTM_COOKIE)?.value),
         landingVariant: cookieStore.get(VARIANT_COOKIE)?.value ?? null,
+        accountId: me?.accountId ?? null,
       },
       settings,
     );

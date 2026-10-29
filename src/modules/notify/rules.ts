@@ -24,6 +24,15 @@ export type NotifyEvent =
       contactPhone: string | null;
       lotHeld: boolean;
     }
+  | {
+      kind: "review_created";
+      reviewId: string;
+      productName: string;
+      rating: number;
+      // Khách chọn "Ngứa hoặc châm chích"
+      irritation: boolean;
+      comment: string;
+    }
   | { kind: "test"; requestedBy: string };
 
 export type NotifyPrefs = {
@@ -38,7 +47,7 @@ export type Message = { subject: string; text: string; urgent: boolean };
 const SEVERITY = { mild: "nhẹ", moderate: "vừa", severe: "NẶNG" } as const;
 
 export function eventEntityId(e: NotifyEvent): string | null {
-  return e.kind === "order_created" ? e.orderId : e.kind === "complaint_created" ? e.complaintId : null;
+  return e.kind === "order_created" ? e.orderId : e.kind === "complaint_created" ? e.complaintId : e.kind === "review_created" ? e.reviewId : null;
 }
 
 // Tin ngắn, đọc được trên màn hình khóa điện thoại: dòng đầu là điều cần làm.
@@ -73,6 +82,15 @@ export function composeMessage(e: NotifyEvent, siteUrl: string): Message {
         text: lines.join("\n"),
         urgent,
       };
+    }
+    case "review_created": {
+      const lines = [
+        `Đánh giá ${e.rating}/5 · ${e.productName}${e.irritation ? " · khách báo NGỨA hoặc CHÂM CHÍCH" : ""}`,
+        ...(e.comment ? [`Khách viết: ${e.comment.slice(0, 400)}`] : []),
+        e.irritation ? "Nhắn hỏi thăm khách và mời gửi phản ánh kèm số lô nếu cần." : "Đọc và ghi lại điều cần sửa.",
+        `Xem: ${base}/admin/danh-gia`,
+      ];
+      return { subject: `[Pomil] Đánh giá ${e.rating}/5 · ${e.productName}`, text: lines.join("\n"), urgent: e.irritation };
     }
     case "test":
       return {
@@ -122,7 +140,13 @@ export function recipientsFor(e: NotifyEvent, prefs: NotifyPrefs, fallbackEmail?
     const urgent = e.severity === "severe" || e.lotHeld;
     return prefs.notifyOnComplaint || urgent ? all : none;
   }
+  // Chỉ báo đánh giá cần làm gì ngay: điểm thấp hoặc khách báo ngứa. Đánh giá tốt xem trong trang quản trị.
+  if (e.kind === "review_created") return reviewNeedsAttention(e) && (prefs.notifyOnComplaint || e.irritation) ? all : none;
   return all;
+}
+
+export function reviewNeedsAttention(e: { rating: number; irritation: boolean }): boolean {
+  return e.rating <= 2 || e.irritation;
 }
 
 // Zalo giới hạn độ dài tin văn bản; cắt gọn ở 2000 ký tự cho chắc.

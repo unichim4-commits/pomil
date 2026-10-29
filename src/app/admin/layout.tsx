@@ -19,6 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/admin", label: "Tổng quan" },
         { href: "/admin/don-hang", label: "Đơn hàng" },
         { href: "/admin/khach-hang", label: "Khách hàng" },
+        { href: "/admin/danh-gia", label: "Đánh giá" },
       ],
     },
     {

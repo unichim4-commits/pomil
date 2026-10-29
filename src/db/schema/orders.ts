@@ -1,6 +1,7 @@
 import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import type { Utm } from "@/lib/utm";
 import { products } from "./catalog";
+import { customerAccounts } from "./accounts";
 import { customers } from "./customers";
 import { lots } from "./quality";
 
@@ -16,6 +17,8 @@ export const orders = pgTable(
     code: text("code").notNull().unique(),
     channel: text("channel").notNull().default("WEB"),
     customerId: uuid("customer_id").references(() => customers.id),
+    // Đặt khi khách đang đăng nhập: đơn hiện trong trang Tài khoản. Đơn khách vãng lai để null.
+    accountId: uuid("account_id").references(() => customerAccounts.id, { onDelete: "set null" }),
     status: orderStatus("status").notNull().default("pending"),
     paymentMethod: paymentMethod("payment_method").notNull(),
     paymentStatus: paymentStatus("payment_status").notNull().default("unpaid"),
@@ -42,7 +45,7 @@ export const orders = pgTable(
     shippedAt: timestamp("shipped_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
   },
-  (t) => [index("orders_status_created_idx").on(t.status, t.createdAt), index("orders_phone_idx").on(t.phoneE164)],
+  (t) => [index("orders_status_created_idx").on(t.status, t.createdAt), index("orders_phone_idx").on(t.phoneE164), index("orders_account_idx").on(t.accountId, t.createdAt)],
 );
 
 export const orderItems = pgTable(

@@ -11,6 +11,7 @@ type Props = {
   dataConsentText: string;
   marketingConsentText: string;
   totalLabel: string;
+  prefill?: { recipientName: string; phone: string; email: string; province: string; ward: string; addressLine: string } | null;
 };
 
 export function CheckoutForm(props: Props) {
@@ -22,10 +23,10 @@ export function CheckoutForm(props: Props) {
     <form method="post" onSubmit={onSubmit} className="space-y-10" noValidate>
       <fieldset data-reveal style={{ ["--d" as string]: "0ms" }} className="space-y-4">
         <legend className="eyebrow mb-2">Người nhận</legend>
-        <Field label="Họ và tên" name="recipientName" autoComplete="name" error={err("recipientName")} required />
+        <Field label="Họ và tên" name="recipientName" autoComplete="name" defaultValue={props.prefill?.recipientName} error={err("recipientName")} required />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Số điện thoại" name="phone" type="tel" inputMode="tel" autoComplete="tel" error={err("phone")} required />
-          <Field label="Email (không bắt buộc)" name="email" type="email" autoComplete="email" error={err("email")} />
+          <Field label="Số điện thoại" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={props.prefill?.phone} error={err("phone")} required />
+          <Field label="Email (không bắt buộc)" name="email" type="email" autoComplete="email" defaultValue={props.prefill?.email} error={err("email")} />
         </div>
       </fieldset>
 
@@ -33,7 +34,7 @@ export function CheckoutForm(props: Props) {
         <legend className="eyebrow mb-2">Địa chỉ giao hàng</legend>
         <label className="block">
           <span className="field-label">Tỉnh / Thành phố</span>
-          <select name="province" className="field" defaultValue="" aria-invalid={!!err("province")} required>
+          <select name="province" className="field" defaultValue={props.prefill?.province ?? ""} aria-invalid={!!err("province")} required>
             <option value="" disabled>
               Chọn tỉnh/thành
             </option>
@@ -43,8 +44,8 @@ export function CheckoutForm(props: Props) {
           </select>
           {err("province") && <span className="mt-1 block text-sm text-danger">{err("province")}</span>}
         </label>
-        <Field label="Phường / Xã" name="ward" error={err("ward")} required />
-        <Field label="Số nhà, tên đường" name="addressLine" autoComplete="street-address" error={err("addressLine")} required />
+        <Field label="Phường / Xã" name="ward" defaultValue={props.prefill?.ward} error={err("ward")} required />
+        <Field label="Số nhà, tên đường" name="addressLine" autoComplete="street-address" defaultValue={props.prefill?.addressLine} error={err("addressLine")} required />
         <label className="block">
           <span className="field-label">Ghi chú cho Pomil (không bắt buộc)</span>
           <textarea name="customerNote" maxLength={500} rows={3} className="field" placeholder="Giờ nhận hàng, gọi trước khi giao…" />

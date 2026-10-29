@@ -10,6 +10,7 @@ import { getPublicProduct } from "@/modules/catalog/service";
 import { WAITLIST_CONSENT_TEXT } from "@/modules/consent/texts";
 import { launchNoteToShow } from "@/modules/settings/rules";
 import { getSettings } from "@/modules/settings/service";
+import { ReviewsSection } from "../../danh-gia/reviews-section";
 import { WaitlistForm } from "../../waitlist-form";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -159,6 +160,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
       </section>
+      <ReviewsSection productId={product.id} productSlug={product.slug} />
     </>
   );
 }
