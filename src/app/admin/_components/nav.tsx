@@ -17,7 +17,7 @@ export function AdminNav({ groups }: { groups: Group[] }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`whitespace-nowrap px-3 py-1.5 text-sm ${isActive(item.href) ? "bg-bone text-graphite" : "text-bone/75"}`}
+            className={`inline-flex min-h-11 items-center whitespace-nowrap px-3 text-sm ${isActive(item.href) ? "bg-bone text-graphite" : "text-bone/75"}`}
           >
             {item.label}
           </Link>
@@ -33,7 +33,7 @@ export function AdminNav({ groups }: { groups: Group[] }) {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`block px-2 py-1.5 text-sm ${isActive(item.href) ? "bg-bone/10 text-bone" : "text-bone/70 hover:text-bone"}`}
+                    className={`flex min-h-11 items-center px-2 text-sm lg:min-h-9 ${isActive(item.href) ? "bg-bone/10 text-bone" : "text-bone/70 hover:text-bone"}`}
                     aria-current={isActive(item.href) ? "page" : undefined}
                   >
                     {item.label}

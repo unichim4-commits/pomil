@@ -107,7 +107,7 @@ export function ProductForm({ product, canWrite }: { product: Product | null; ca
             )}
             <label className="block">
               <span className="field-label">Thêm ảnh (JPG, PNG, WebP, tối đa 3 MB mỗi ảnh)</span>
-              <input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="block w-full text-sm file:mr-3 file:border file:border-graphite file:bg-transparent file:px-3 file:py-1.5" />
+              <input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="block w-full text-sm file:mr-3 file:border file:border-graphite file:bg-transparent file:px-3 file:py-3" />
             </label>
             <label className="block">
               <span className="field-label">Màu chai khi chưa có ảnh</span>

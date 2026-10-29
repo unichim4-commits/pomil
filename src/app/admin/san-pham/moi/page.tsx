@@ -11,7 +11,7 @@ export default async function NewProductPage() {
   const staff = await requireStaff();
   return (
     <>
-      <Link href="/admin/san-pham" className="text-sm text-ink-soft hover:text-graphite">
+      <Link href="/admin/san-pham" className="inline-flex min-h-11 items-center text-sm text-ink-soft hover:text-graphite">
         ← Sản phẩm
       </Link>
       <div className="mt-3">

@@ -16,7 +16,7 @@ export default async function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-      <h1 className="display text-5xl">Thanh toán</h1>
+      <h1 className="display enter text-5xl">Thanh toán</h1>
       <div className="mt-10 grid gap-12 lg:grid-cols-[1fr_22rem]">
         <CheckoutForm
           provinces={VN_PROVINCES}
@@ -26,7 +26,7 @@ export default async function CheckoutPage() {
           marketingConsentText={CHECKOUT_MARKETING_CONSENT_TEXT}
           totalLabel={formatVnd(cart.total)}
         />
-        <aside className="h-fit border border-line bg-paper p-6 lg:sticky lg:top-24">
+        <aside className="enter h-fit border border-line bg-paper p-6 lg:sticky lg:top-24" style={{ ["--d" as string]: "250ms" }}>
           <h2 className="eyebrow">Đơn của bạn</h2>
           <ul className="mt-5 space-y-3 text-sm">
             {cart.rows.map((r) => (

@@ -65,7 +65,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Doanh thu hôm nay" value={formatVnd(stats.today.revenue)} hint={`${stats.today.orders} đơn`} />
         <Stat label="30 ngày qua" value={formatVnd(stats.last30.revenue)} hint={`${stats.last30.orders} đơn`} />
         <Stat label="Đơn cần xử lý" value={String(toHandle)} hint={`${byStatus.pending ?? 0} chờ xác nhận`} href="/admin/don-hang?status=pending" />
@@ -75,9 +75,9 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.6fr_1fr]">
         <Card title="Doanh thu 14 ngày">
           <div className="flex h-44 items-end gap-1.5" role="img" aria-label="Biểu đồ doanh thu 14 ngày gần nhất">
-            {days.map((d) => (
+            {days.map((d, i) => (
               <div key={d.key} className="group relative flex h-full flex-1 flex-col justify-end">
-                <div className="w-full bg-rind/80 transition group-hover:bg-graphite" style={{ height: `${Math.max(d.revenue > 0 ? 4 : 1, (d.revenue / maxRevenue) * 100)}%` }} />
+                <div className="bar-grow w-full bg-rind/80 transition-colors group-hover:bg-graphite" style={{ height: `${Math.max(d.revenue > 0 ? 4 : 1, (d.revenue / maxRevenue) * 100)}%`, ["--d" as string]: `${300 + i * 45}ms` }} />
                 <span className="pointer-events-none absolute -top-9 left-1/2 hidden -translate-x-1/2 whitespace-nowrap bg-graphite px-2 py-1 text-[0.7rem] text-bone group-hover:block">
                   {d.label}: {formatVnd(d.revenue)} · {d.orders} đơn
                 </span>
@@ -93,20 +93,20 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         <Card title="Cần để ý">
           <ul className="space-y-3 text-sm">
             <li className="flex justify-between">
-              <Link href="/admin/phan-anh" className="hover:underline">
+              <Link href="/admin/phan-anh" className="inline-flex min-h-11 items-center hover:underline">
                 Phản ánh đang mở
               </Link>
               <Badge tone={openComplaints > 0 ? "red" : "green"}>{openComplaints}</Badge>
             </li>
             <li className="flex justify-between">
-              <Link href="/admin/khach-hang?stage=lead" className="hover:underline">
+              <Link href="/admin/khach-hang?stage=lead" className="inline-flex min-h-11 items-center hover:underline">
                 Danh sách chờ
               </Link>
               <Badge>{stages.lead ?? 0}</Badge>
             </li>
             {failedNotify > 0 && can(staff.role, "settings.write") && (
               <li className="flex justify-between">
-                <Link href="/admin/thong-bao" className="hover:underline">
+                <Link href="/admin/thong-bao" className="inline-flex min-h-11 items-center hover:underline">
                   Thông báo gửi lỗi
                 </Link>
                 <Badge tone="red">{failedNotify}</Badge>
@@ -114,7 +114,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
             )}
             {lowStock.map((p) => (
               <li key={p.id} className="flex justify-between">
-                <Link href={`/admin/san-pham/${p.id}`} className="hover:underline">
+                <Link href={`/admin/san-pham/${p.id}`} className="inline-flex min-h-11 items-center hover:underline">
                   Tồn kho thấp: {p.name}
                 </Link>
                 <Badge tone={p.stock === 0 ? "red" : "amber"}>{p.stock}</Badge>
@@ -128,7 +128,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       <div className="mt-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="eyebrow text-[0.68rem]">Đơn mới nhất</h2>
-          <Link href="/admin/don-hang" className="text-sm underline underline-offset-4">
+          <Link href="/admin/don-hang" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">
             Tất cả đơn
           </Link>
         </div>

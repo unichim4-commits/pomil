@@ -12,7 +12,7 @@ export default async function NewContentPage({ searchParams }: { searchParams: P
   const kind = loai === "page" ? "page" : "post";
   return (
     <>
-      <Link href="/admin/noi-dung" className="text-sm text-ink-soft hover:text-graphite">
+      <Link href="/admin/noi-dung" className="inline-flex min-h-11 items-center text-sm text-ink-soft hover:text-graphite">
         ← Nội dung
       </Link>
       <div className="mt-3">

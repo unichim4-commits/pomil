@@ -25,7 +25,7 @@ export default async function LotDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <Link href="/admin/lo" className="text-sm text-ink-soft hover:text-graphite">
+      <Link href="/admin/lo" className="inline-flex min-h-11 items-center text-sm text-ink-soft hover:text-graphite">
         ← Lô và kiểm nghiệm
       </Link>
       <div className="mb-8 mt-3 flex flex-wrap items-center gap-4">
@@ -35,11 +35,11 @@ export default async function LotDetailPage({ params }: { params: Promise<{ id: 
           {product?.name} · công thức {lot.formulaVersion} · {lot.unitsProduced} chai
         </span>
         <div className="ml-auto flex gap-3 text-sm">
-          <a href={`/api/lots/${encodeURIComponent(lot.lotNo)}/qr`} target="_blank" className="underline underline-offset-4">
+          <a href={`/api/lots/${encodeURIComponent(lot.lotNo)}/qr`} target="_blank" className="inline-flex min-h-11 items-center underline underline-offset-4">
             Mã QR cho nhãn ↗
           </a>
           {lot.isPublic && lot.releaseStatus !== "quarantine" && (
-            <Link href={`/l/${lot.lotNo}`} target="_blank" className="underline underline-offset-4">
+            <Link href={`/l/${lot.lotNo}`} target="_blank" className="inline-flex min-h-11 items-center underline underline-offset-4">
               Trang lô ↗
             </Link>
           )}
@@ -103,7 +103,7 @@ export default async function LotDetailPage({ params }: { params: Promise<{ id: 
             )}
             {canWrite && (
               <details className="mt-5 border-t border-line pt-4">
-                <summary className="cursor-pointer text-sm font-medium">Thêm phiếu kiểm nghiệm</summary>
+                <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium">Thêm phiếu kiểm nghiệm</summary>
                 <ActionForm action={addTestAction} submitLabel="Thêm phiếu" className="mt-4 grid gap-3 sm:grid-cols-2" resetOnSuccess>
                   <input type="hidden" name="lotId" value={lot.id} />
                   <label className="block">
@@ -253,7 +253,7 @@ export default async function LotDetailPage({ params }: { params: Promise<{ id: 
             )}
             {canWrite && (
               <details className="mt-4 border-t border-line pt-3">
-                <summary className="cursor-pointer text-sm font-medium">{notification ? "Thêm phiếu mới" : "Nhập phiếu công bố"}</summary>
+                <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium">{notification ? "Thêm phiếu mới" : "Nhập phiếu công bố"}</summary>
                 <ActionForm action={notificationAction} submitLabel="Lưu phiếu" className="mt-3 space-y-3">
                   <input type="hidden" name="productId" value={lot.productId} />
                   <input type="hidden" name="lotId" value={lot.id} />

@@ -23,7 +23,7 @@ export default async function AccountPage() {
             <>
               <p className="text-sm">Đang bật. Mỗi lần đăng nhập cần mã 6 số trong ứng dụng xác thực.</p>
               <details className="mt-4 text-sm">
-                <summary className="cursor-pointer text-ink-soft">Tắt xác thực 2 lớp</summary>
+                <summary className="flex min-h-11 cursor-pointer items-center text-ink-soft">Tắt xác thực 2 lớp</summary>
                 <ActionForm action={disableTotpAction} submitLabel="Tắt" submitClassName="btn btn-outline" className="mt-3 flex items-center gap-3">
                   <input name="code" inputMode="numeric" maxLength={7} required placeholder="Mã hiện tại" className="field max-w-40 font-mono" />
                 </ActionForm>

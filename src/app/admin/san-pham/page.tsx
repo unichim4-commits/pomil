@@ -38,7 +38,7 @@ export default async function ProductsAdminPage() {
         {products.map((p) => (
           <li key={p.id} className="border border-line bg-paper p-4">
             <div className="flex items-start justify-between gap-3">
-              <Link href={`/admin/san-pham/${p.id}`} className="font-medium underline-offset-4 hover:underline">
+              <Link href={`/admin/san-pham/${p.id}`} className="inline-flex min-h-11 items-center -mt-1 font-medium underline-offset-4 hover:underline">
                 {p.name}
               </Link>
               <Badge tone={STATUS[p.status]?.tone}>{STATUS[p.status]?.label}</Badge>

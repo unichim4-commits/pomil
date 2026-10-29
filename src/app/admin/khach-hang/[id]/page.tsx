@@ -39,7 +39,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   return (
     <>
-      <Link href="/admin/khach-hang" className="text-sm text-ink-soft hover:text-graphite">
+      <Link href="/admin/khach-hang" className="inline-flex min-h-11 items-center text-sm text-ink-soft hover:text-graphite">
         ← Khách hàng
       </Link>
       <div className="mb-8 mt-3 flex flex-wrap items-center gap-4">
@@ -119,9 +119,9 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               )}
             </dl>
             {canWrite && (
-              <ActionForm action={stageAction} submitLabel="Đổi" className="mt-4 flex items-center gap-2" submitClassName="btn btn-outline min-h-10 py-1.5" inline>
+              <ActionForm action={stageAction} submitLabel="Đổi" className="mt-4 flex items-center gap-2" submitClassName="btn btn-outline min-h-11" inline>
                 <input type="hidden" name="customerId" value={c.id} />
-                <select name="stage" defaultValue={c.lifecycleStage} className="field min-h-10 py-1.5 text-sm" aria-label="Giai đoạn">
+                <select name="stage" defaultValue={c.lifecycleStage} className="field min-h-11 text-sm" aria-label="Giai đoạn">
                   {Object.entries(STAGE_LABEL).map(([k, v]) => (
                     <option key={k} value={k}>
                       {v}

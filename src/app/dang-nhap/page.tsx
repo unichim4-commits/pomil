@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Wordmark } from "@/components/brand";
+import { Bubbles, Wordmark } from "@/components/brand";
 import { readSession, staffCount } from "@/modules/auth/service";
 import { setupMode } from "@/modules/auth/setup";
 import { LoginForm, MfaForm, SetupForm, SetupTokenGenerator } from "./forms";
@@ -21,10 +21,12 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const gate = setupMode({ nodeEnv: process.env.NODE_ENV, setupToken: process.env.SETUP_TOKEN });
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-pith px-4 py-16">
-      <div className="w-full max-w-sm">
-        <Link href="/" className="mb-8 flex justify-center" aria-label="Về trang chủ">
-          <Wordmark className="h-6 w-auto" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-pith px-4 py-16">
+      <div className="dots dots-move pointer-events-none absolute inset-0 opacity-25 [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" aria-hidden="true" />
+      <Bubbles className="text-rind/40" />
+      <div className="enter relative w-full max-w-sm">
+        <Link href="/" className="mb-6 flex min-h-11 items-center justify-center" aria-label="Về trang chủ">
+          <Wordmark className="text-xl" />
         </Link>
         <div className="border border-line bg-bone p-7 shadow-sm">
           {mode === "setup" && (

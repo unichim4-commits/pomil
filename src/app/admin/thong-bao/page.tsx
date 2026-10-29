@@ -40,7 +40,7 @@ export default async function NotificationsPage() {
               Đơn mới: {settings.notifyOnOrder ? "bật" : "tắt"} · Phản ánh: {settings.notifyOnComplaint ? "bật" : "chỉ khi khẩn"}
             </li>
           </ul>
-          <Link href="/admin/cai-dat" className="mt-3 inline-block text-sm underline underline-offset-4">
+          <Link href="/admin/cai-dat" className="mt-1 inline-flex min-h-11 items-center text-sm underline underline-offset-4">
             Sửa ở Cài đặt cửa hàng
           </Link>
           <div className="mt-5 border-t border-line pt-4">

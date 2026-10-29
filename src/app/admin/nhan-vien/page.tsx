@@ -57,7 +57,7 @@ export default async function StaffPage() {
               </ActionForm>
               {s.id !== me.id && (
                 <details className="mt-3 text-sm">
-                  <summary className="cursor-pointer text-ink-soft">Đặt lại mật khẩu</summary>
+                  <summary className="flex min-h-11 cursor-pointer items-center text-ink-soft">Đặt lại mật khẩu</summary>
                   <ActionForm action={resetPasswordAction} submitLabel="Đặt mật khẩu" className="mt-3 flex flex-wrap items-center gap-3" resetOnSuccess>
                     <input type="hidden" name="id" value={s.id} />
                     <input name="password" type="text" minLength={10} required placeholder="Mật khẩu tạm, ít nhất 10 ký tự" autoComplete="off" className="field max-w-xs" />

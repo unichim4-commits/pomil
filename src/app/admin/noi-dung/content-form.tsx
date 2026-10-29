@@ -64,7 +64,7 @@ export function ContentForm({ page, kind, canWrite }: { page: ContentPage | null
               </label>
             </>
           )}
-          <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/avif" className="block w-full text-sm" />
+          <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/avif" className="block w-full text-sm file:mr-3 file:border file:border-graphite file:bg-transparent file:px-3 file:py-3" />
         </Card>
       </div>
     </div>

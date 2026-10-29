@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mark } from "@/components/brand";
 import { can, ROLE_LABEL } from "@/modules/auth/rules";
 import { requireStaff } from "@/modules/auth/service";
 import { logoutAction } from "../dang-nhap/actions";
@@ -52,13 +51,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-bone lg:grid lg:grid-cols-[15rem_1fr]">
       <aside className="border-b border-line bg-graphite text-bone lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 lg:py-6">
-          <Link href="/admin" className="flex items-center gap-2">
-            <Mark className="h-6 w-6" />
+          <Link href="/admin" className="flex min-h-11 items-center gap-2">
             <span className="eyebrow text-[0.7rem]">Pomil OS</span>
           </Link>
-          <Link href="/" target="_blank" className="text-xs text-bone/60 hover:text-bone">
-            Xem web ↗
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/" target="_blank" className="inline-flex min-h-11 items-center text-xs text-bone/60 hover:text-bone">
+              Xem web ↗
+            </Link>
+            {/* Điện thoại không có khung bên trái, nên đặt nút đăng xuất ở đây */}
+            <form action={logoutAction} className="lg:hidden">
+              <button className="inline-flex min-h-11 items-center text-xs text-bone/60 underline underline-offset-4 hover:text-bone">Đăng xuất</button>
+            </form>
+          </div>
         </div>
         <AdminNav groups={groups} />
         <div className="hidden border-t border-bone/10 px-5 py-4 text-xs lg:block">

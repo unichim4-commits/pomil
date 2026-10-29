@@ -65,7 +65,7 @@ export function WaitlistForm({
       <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
       <label className="flex items-start gap-3 text-sm opacity-90">
         {/* Không tích sẵn (SYS-20) */}
-        <input type="checkbox" name="marketingConsent" className="mt-1 h-4 w-4 accent-rind" />
+        <input type="checkbox" name="marketingConsent" className="mt-0.5 h-5 w-5 shrink-0 accent-rind" />
         <span>{consentText}</span>
       </label>
       {state.status === "error" && (

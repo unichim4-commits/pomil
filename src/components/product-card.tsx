@@ -8,14 +8,14 @@ export function productAvailability(product: Pick<Product, "status" | "stock">, 
   return product.stock > 0 ? "buy" : "sold_out";
 }
 
-export function ProductCard({ product, salesOpen }: { product: Product; salesOpen: boolean }) {
+export function ProductCard({ product, salesOpen, index = 0 }: { product: Product; salesOpen: boolean; index?: number }) {
   const availability = productAvailability(product, salesOpen);
   return (
-    <Link href={`/san-pham/${product.slug}`} className="group block">
+    <Link href={`/san-pham/${product.slug}`} className="group block" data-reveal style={{ ["--d" as string]: `${Math.min(index, 5) * 90}ms` }}>
       <div className="relative">
         <ProductVisual product={product} className="aspect-[4/5] transition duration-500 group-hover:brightness-[0.97]" />
         {availability !== "buy" && (
-          <span className="eyebrow absolute left-3 top-3 bg-bone px-2 py-1 text-[0.62rem]">{availability === "soon" ? "Sắp ra mắt" : "Tạm hết"}</span>
+          <span className="eyebrow absolute left-3 top-3 bg-bone px-2 py-1 text-[0.7rem]">{availability === "soon" ? "Sắp ra mắt" : "Tạm hết"}</span>
         )}
       </div>
       <div className="mt-4 flex items-start justify-between gap-4">

@@ -9,12 +9,12 @@ export default async function JournalPage() {
   const posts = await listPublishedPosts();
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
-      <p className="eyebrow text-rind">Nhật ký</p>
-      <h1 className="display mt-4 text-5xl">Làm từng bước, kể từng bước</h1>
+      <p className="eyebrow enter text-rind">Nhật ký</p>
+      <h1 className="display enter mt-4 text-5xl" style={{ ["--d" as string]: "100ms" }}>Làm từng bước, kể từng bước</h1>
       <p className="mt-4 text-ink-soft">Hậu trường, kiến thức da đầu và những điều bọn mình nói thật.</p>
       <ul className="mt-12 divide-y divide-line border-y border-line">
-        {posts.map((post) => (
-          <li key={post.id}>
+        {posts.map((post, i) => (
+          <li key={post.id} data-reveal style={{ ["--d" as string]: `${Math.min(i, 6) * 70}ms` }}>
             <Link href={`/nhat-ky/${post.slug}`} className="group block py-8">
               <p className="eyebrow text-ink-soft">{formatDate(post.publishedAt)}</p>
               <h2 className="mt-3 text-2xl font-light group-hover:underline group-hover:decoration-rind group-hover:underline-offset-4">{post.title}</h2>

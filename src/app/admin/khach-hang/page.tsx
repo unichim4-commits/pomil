@@ -36,8 +36,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       />
       <form className="mb-4 flex max-w-md gap-2">
         {stage && <input type="hidden" name="stage" value={stage} />}
-        <input name="q" defaultValue={sp.q} placeholder="Tên, số điện thoại hoặc mã giới thiệu" className="field min-h-10 py-1.5 text-sm" />
-        <button className="btn btn-outline min-h-10 py-1.5">Tìm</button>
+        <input name="q" defaultValue={sp.q} placeholder="Tên, số điện thoại hoặc mã giới thiệu" className="field min-h-11 text-sm" />
+        <button className="btn btn-outline min-h-11">Tìm</button>
       </form>
       {rows.length === 0 ? (
         <Empty>Chưa có khách nào khớp.</Empty>

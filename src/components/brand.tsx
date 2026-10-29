@@ -1,60 +1,57 @@
-// Logo và minh họa vẽ lại từ file SVG gốc trong thư mục logo/ (bộ nhận diện v2), đổi sang currentColor.
-
-export function Wordmark({ className = "h-5 w-auto", title = "Pomil" }: { className?: string; title?: string }) {
+// Tên thương hiệu viết bằng chữ thường của bộ chữ chính (Be Vietnam Pro nhẹ, giãn chữ), không có biểu tượng.
+export function Wordmark({ className = "text-xl", title = "Pomil" }: { className?: string; title?: string }) {
   return (
-    <svg viewBox="0 -12.95 454.2 114.55" className={className} role="img" aria-label={title}>
-      <g fill="none" stroke="currentColor" strokeWidth="5" strokeLinejoin="miter" strokeMiterlimit="10">
-        <path d="M2.5,100 V2.5 H24.5 A25,25 0 0 1 24.5,52.5 H2.5" />
-        <path d="M227.7,100 V0 L270.2,100 L312.7,0 V100" />
-        <path d="M361.7,0 V100" />
-        <path d="M412.7,0 V97.5 H454.2" />
-      </g>
-      <path
-        d="M135.6,-9.9 L163.73,9.75 A49.1,49.1 0 1 1 107.47,9.75 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="5"
-        strokeLinejoin="miter"
-        strokeMiterlimit="20"
-      />
-      <circle cx="135.6" cy="50" r="7.61" fill="currentColor" />
-    </svg>
+    <span className={`inline-block font-light uppercase leading-none tracking-[0.32em] ${className}`} role="img" aria-label={title}>
+      POMIL
+    </span>
   );
 }
 
-export function Mark({ className = "h-6 w-6", compact = false }: { className?: string; compact?: boolean }) {
-  return (
-    <svg viewBox="0 0 120 120" className={className} aria-hidden="true">
-      {compact ? (
-        <>
-          <path d="M60,20.04 L80.62,34.45 A36,36 0 1 1 39.38,34.45 Z" fill="none" stroke="currentColor" strokeWidth="6.84" strokeMiterlimit="20" />
-          <circle cx="60" cy="63.96" r="9" fill="currentColor" />
-        </>
-      ) : (
-        <>
-          <path d="M60,17.82 L81.77,33.03 A38,38 0 1 1 38.23,33.03 Z" fill="none" stroke="currentColor" strokeWidth="3.88" strokeMiterlimit="20" />
-          <circle cx="60" cy="64.18" r="5.89" fill="currentColor" />
-        </>
-      )}
-    </svg>
-  );
-}
-
-// Mặt cắt quả bưởi, nét 1px
-export function CrossSection({ className = "h-40 w-40" }: { className?: string }) {
+// Mặt cắt quả bưởi, nét 1px. Các múi xoay rất chậm, vòng ngoài thở nhẹ.
+export function CrossSection({ className = "h-40 w-40", animated = true }: { className?: string; animated?: boolean }) {
   const spokes = Array.from({ length: 12 }, (_, i) => {
     const a = (i * Math.PI) / 6;
     return { x: 100 + 62 * Math.sin(a), y: 100 - 62 * Math.cos(a) };
   });
   return (
     <svg viewBox="0 0 200 200" className={className} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1">
-      <circle cx="100" cy="100" r="96" />
-      <circle cx="100" cy="100" r="88" />
-      <circle cx="100" cy="100" r="62" />
-      {spokes.map((p, i) => (
-        <line key={i} x1="100" y1="100" x2={p.x.toFixed(2)} y2={p.y.toFixed(2)} />
-      ))}
+      <g className={animated ? "ring-pulse" : undefined}>
+        <circle cx="100" cy="100" r="96" />
+        <circle cx="100" cy="100" r="88" />
+      </g>
+      <g className={animated ? "spin-slow" : undefined}>
+        <circle cx="100" cy="100" r="62" />
+        {spokes.map((p, i) => (
+          <line key={i} x1="100" y1="100" x2={p.x.toFixed(2)} y2={p.y.toFixed(2)} />
+        ))}
+      </g>
     </svg>
+  );
+}
+
+// Bọt tinh dầu nhỏ nổi lên rồi tan, làm nền động. Vị trí cố định để không lệch giữa máy chủ và trình duyệt.
+const BUBBLES = [
+  { left: "6%", size: 10, t: 9, d: 0, dx: 14 },
+  { left: "17%", size: 18, t: 12, d: 2.5, dx: -10 },
+  { left: "29%", size: 8, t: 8, d: 5, dx: 8 },
+  { left: "41%", size: 22, t: 14, d: 1, dx: 16 },
+  { left: "53%", size: 12, t: 10, d: 6.5, dx: -14 },
+  { left: "64%", size: 16, t: 11, d: 3.5, dx: 10 },
+  { left: "76%", size: 9, t: 9, d: 7.5, dx: -8 },
+  { left: "88%", size: 20, t: 13, d: 4, dx: -16 },
+] as const;
+
+export function Bubbles({ className = "text-rind/50" }: { className?: string }) {
+  return (
+    <div className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`} aria-hidden="true">
+      {BUBBLES.map((b, i) => (
+        <span
+          key={i}
+          className="bubble"
+          style={{ left: b.left, width: b.size, height: b.size, ["--t" as string]: `${b.t}s`, ["--d" as string]: `${b.d}s`, ["--dx" as string]: `${b.dx}px` }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -97,23 +94,17 @@ export function Bottle({
           <stop offset="1" stopColor={t.body} />
         </linearGradient>
       </defs>
-      <ellipse cx="120" cy="505" rx="104" ry="9" fill="#1e2420" opacity="0.12" />
+      <ellipse cx="120" cy="505" rx="104" ry="9" fill="#1e2420" opacity="0.16" className="shadow-breathe" />
+      <g className="float">
       {/* Đầu xịt */}
       <rect x="92" y="8" width="56" height="64" rx="4" fill="#1e2420" />
       <rect x="146" y="22" width="16" height="10" rx="2" fill="#1e2420" />
       <rect x="80" y="70" width="80" height="78" rx="4" fill="#232a26" />
       {/* Thân chai */}
       <path d={`M20,190 Q20,160 60,156 L180,156 Q220,160 220,190 L220,488 Q220,500 208,500 L32,500 Q20,500 20,488 Z`} fill={`url(#${id}-g)`} />
-      <g transform="translate(120 268) scale(0.29) translate(-227 -45)" color={t.ink}>
-        <g fill="none" stroke="currentColor" strokeWidth="5">
-          <path d="M2.5,100 V2.5 H24.5 A25,25 0 0 1 24.5,52.5 H2.5" />
-          <path d="M227.7,100 V0 L270.2,100 L312.7,0 V100" />
-          <path d="M361.7,0 V100" />
-          <path d="M412.7,0 V97.5 H454.2" />
-          <path d="M135.6,-9.9 L163.73,9.75 A49.1,49.1 0 1 1 107.47,9.75 Z" />
-        </g>
-        <circle cx="135.6" cy="50" r="7.61" fill="currentColor" />
-      </g>
+      <text x="120" y="276" textAnchor="middle" fill={t.ink} fontSize="30" fontWeight="300" letterSpacing="9">
+        POMIL
+      </text>
       <text x="120" y="330" textAnchor="middle" fill={t.ink} fontSize="11.5" letterSpacing="2.8" fontWeight="500" style={{ textTransform: "uppercase" }}>
         {name.toUpperCase().slice(0, 24)}
       </text>
@@ -130,6 +121,7 @@ export function Bottle({
       <text x="120" y="478" textAnchor="middle" fill={t.sub} fontSize="8" letterSpacing="2.4">
         LÔ Nº ····
       </text>
+      </g>
     </svg>
   );
 }

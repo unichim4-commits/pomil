@@ -25,7 +25,7 @@ export function AddToCart({ productId, max, compact = false }: { productId: stri
       <input type="hidden" name="productId" value={productId} />
       <div className="flex gap-3">
         <div className="flex items-stretch border border-graphite">
-          <button type="button" aria-label="Bớt một" className="w-11 text-lg" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+          <button type="button" aria-label="Bớt một" className="h-11 w-11 text-lg" onClick={() => setQty((q) => Math.max(1, q - 1))}>
             −
           </button>
           <input
@@ -34,9 +34,9 @@ export function AddToCart({ productId, max, compact = false }: { productId: stri
             onChange={(e) => setQty(Math.min(max, Math.max(1, Number(e.target.value) || 1)))}
             inputMode="numeric"
             aria-label="Số lượng"
-            className="w-12 bg-transparent text-center"
+            className="h-11 w-12 bg-transparent text-center"
           />
-          <button type="button" aria-label="Thêm một" className="w-11 text-lg" onClick={() => setQty((q) => Math.min(max, q + 1))}>
+          <button type="button" aria-label="Thêm một" className="h-11 w-11 text-lg" onClick={() => setQty((q) => Math.min(max, q + 1))}>
             +
           </button>
         </div>

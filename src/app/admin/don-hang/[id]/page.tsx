@@ -36,14 +36,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <Link href="/admin/don-hang" className="text-sm text-ink-soft hover:text-graphite">
+      <Link href="/admin/don-hang" className="inline-flex min-h-11 items-center text-sm text-ink-soft hover:text-graphite">
         ← Đơn hàng
       </Link>
       <div className="mb-8 mt-3 flex flex-wrap items-center gap-4">
         <h1 className="font-mono text-2xl">{order.code}</h1>
         <Badge tone={ORDER_TONE[order.status]}>{ORDER_STATUS_LABEL[order.status]}</Badge>
         <span className="text-sm text-ink-soft">Đặt lúc {formatDateTime(order.createdAt)}</span>
-        <Link href={`/don-hang/${order.code}?t=${order.accessToken}`} target="_blank" className="ml-auto text-sm underline underline-offset-4">
+        <Link href={`/don-hang/${order.code}?t=${order.accessToken}`} target="_blank" className="inline-flex min-h-11 items-center ml-auto text-sm underline underline-offset-4">
           Trang khách xem ↗
         </Link>
       </div>
@@ -122,7 +122,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 ))}
                 {backward.map((to) => (
                   <details key={to} className="border-t border-line pt-4">
-                    <summary className="cursor-pointer text-sm text-danger">{NEXT_LABEL[to]}…</summary>
+                    <summary className="flex min-h-11 cursor-pointer items-center text-sm text-danger">{NEXT_LABEL[to]}…</summary>
                     <ActionForm
                       action={changeStatusAction}
                       submitLabel={NEXT_LABEL[to]}
@@ -169,7 +169,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </p>
             {order.customerNote && <p className="mt-3 bg-pith p-3 text-sm">Khách ghi: {order.customerNote}</p>}
             {order.customerId && (
-              <Link href={`/admin/khach-hang/${order.customerId}`} className="mt-3 inline-block text-sm underline underline-offset-4">
+              <Link href={`/admin/khach-hang/${order.customerId}`} className="mt-1 inline-flex min-h-11 items-center text-sm underline underline-offset-4">
                 Hồ sơ khách
               </Link>
             )}

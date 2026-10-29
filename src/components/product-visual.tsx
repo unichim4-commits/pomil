@@ -12,7 +12,7 @@ export function ProductVisual({ product, className = "", priority = false }: { p
         <img
           src={`/api/files/${imageId}`}
           alt={product.name}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="kenburns absolute inset-0 h-full w-full object-cover"
           loading={priority ? "eager" : "lazy"}
           fetchPriority={priority ? "high" : "auto"}
         />
@@ -21,7 +21,7 @@ export function ProductVisual({ product, className = "", priority = false }: { p
   }
   return (
     <div className={`relative flex items-end justify-center overflow-hidden bg-pith ${className}`}>
-      <div className="dots absolute inset-x-0 top-0 h-1/2 opacity-60 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+      <div className="dots dots-move absolute inset-x-0 top-0 h-1/2 opacity-60 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Bottle tone={toneOf(product.tone)} name={product.name} subtitle={product.subtitle} size={product.size} className="relative h-[82%] w-auto pb-[6%]" />
     </div>
   );

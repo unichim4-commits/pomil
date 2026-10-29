@@ -28,7 +28,7 @@ export default async function CartPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-      <h1 className="display text-5xl">Giỏ hàng</h1>
+      <h1 className="display enter text-5xl">Giỏ hàng</h1>
       <div className="mt-10 grid gap-12 lg:grid-cols-[1fr_22rem]">
         <ul className="divide-y divide-line border-y border-line">
           {cart.rows.map(({ product, quantity, lineTotal }) => (
@@ -51,19 +51,19 @@ export default async function CartPage() {
                 <div className="mt-auto flex items-center gap-4 pt-4">
                   <form action={updateCartAction} className="flex items-center border border-line">
                     <input type="hidden" name="productId" value={product.id} />
-                    <button name="quantity" value={quantity - 1} className="h-9 w-9" aria-label="Bớt một">
+                    <button name="quantity" value={quantity - 1} className="h-11 w-11" aria-label="Bớt một">
                       −
                     </button>
                     <span className="w-8 text-center text-sm" aria-label="Số lượng">
                       {quantity}
                     </span>
-                    <button name="quantity" value={quantity + 1} className="h-9 w-9" aria-label="Thêm một" disabled={quantity >= Math.min(settings.maxQtyPerItem, product.stock)}>
+                    <button name="quantity" value={quantity + 1} className="h-11 w-11" aria-label="Thêm một" disabled={quantity >= Math.min(settings.maxQtyPerItem, product.stock)}>
                       +
                     </button>
                   </form>
                   <form action={updateCartAction}>
                     <input type="hidden" name="productId" value={product.id} />
-                    <button name="quantity" value={0} className="text-sm text-ink-soft underline underline-offset-4 hover:text-graphite">
+                    <button name="quantity" value={0} className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 text-sm text-ink-soft underline underline-offset-4 hover:text-graphite">
                       Xóa
                     </button>
                   </form>
@@ -73,7 +73,7 @@ export default async function CartPage() {
           ))}
         </ul>
 
-        <aside className="h-fit border border-line bg-paper p-6">
+        <aside className="enter h-fit border border-line bg-paper p-6" style={{ ["--d" as string]: "200ms" }}>
           <h2 className="eyebrow">Tóm tắt</h2>
           <dl className="mt-5 space-y-3 text-sm">
             <div className="flex justify-between">
@@ -104,7 +104,7 @@ export default async function CartPage() {
           ) : (
             <p className="mt-6 text-sm text-ink-soft">{settings.salesOpen ? "Sửa các mục trên để tiếp tục." : "Cửa hàng đang tạm ngừng nhận đơn."}</p>
           )}
-          <Link href="/san-pham" className="mt-4 block text-center text-sm text-ink-soft underline underline-offset-4">
+          <Link href="/san-pham" className="mt-2 flex min-h-11 items-center justify-center text-sm text-ink-soft underline underline-offset-4">
             Tiếp tục mua
           </Link>
         </aside>

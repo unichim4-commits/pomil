@@ -39,8 +39,8 @@ export default async function OrdersPage({ searchParams }: Props) {
       />
       <form className="mb-4 flex max-w-md gap-2">
         {status && <input type="hidden" name="status" value={status} />}
-        <input name="q" defaultValue={sp.q} placeholder="Mã đơn, tên hoặc số điện thoại" className="field min-h-10 py-1.5 text-sm" />
-        <button className="btn btn-outline min-h-10 py-1.5">Tìm</button>
+        <input name="q" defaultValue={sp.q} placeholder="Mã đơn, tên hoặc số điện thoại" className="field min-h-11 text-sm" />
+        <button className="btn btn-outline min-h-11">Tìm</button>
       </form>
 
       {rows.length === 0 ? (

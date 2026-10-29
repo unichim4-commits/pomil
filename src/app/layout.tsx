@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro, Cormorant_Garamond } from "next/font/google";
+import { MotionRoot } from "@/components/motion";
 import "./globals.css";
 
 // Hai họ chữ của bộ nhận diện: Be Vietnam Pro (chữ chính) và Cormorant Garamond nghiêng (chữ nhấn)
@@ -30,8 +31,20 @@ export const viewport: Viewport = { themeColor: "#1e2420" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={`${beVietnam.variable} ${cormorant.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+    // suppressHydrationWarning: đoạn script bên dưới thêm lớp "js" vào <html> trước khi React chạy
+    <html lang="vi" className={`${beVietnam.variable} ${cormorant.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Chỉ bật hiệu ứng hiện dần khi trình duyệt hỗ trợ và người dùng không chọn "giảm chuyển động"; nếu không thì nội dung luôn hiện. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if('IntersectionObserver' in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('js')}catch(e){}`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen antialiased">
+        {children}
+        <MotionRoot />
+      </body>
     </html>
   );
 }

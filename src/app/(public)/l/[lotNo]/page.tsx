@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mark } from "@/components/brand";
 import { formatDate } from "@/lib/format";
 import { parseLotNo } from "@/lib/lot-no";
 import { LOT_COPY, LOT_FORMAT_HINT } from "@/modules/quality/copy";
@@ -59,10 +58,9 @@ export default async function LotPage({ params }: Props) {
     <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">
       <div className="flex items-center justify-between">
         <p className="eyebrow text-ink-soft">Truy xuất lô</p>
-        <Mark className="h-7 w-7 text-rind" />
       </div>
       <p className="mt-8 text-sm text-ink-soft">Lô số</p>
-      <h1 className="font-mono text-3xl tracking-wider sm:text-4xl">{lot.lotNo}</h1>
+      <h1 className="enter font-mono text-3xl tracking-wider sm:text-4xl">{lot.lotNo}</h1>
 
       {lot.status !== "released" && (
         <p className="mt-6 border border-danger/40 bg-danger/5 p-4 text-sm text-danger" role="alert">
@@ -70,7 +68,7 @@ export default async function LotPage({ params }: Props) {
         </p>
       )}
 
-      <dl className="mt-8 divide-y divide-line border-y border-line">
+      <dl className="mt-8 divide-y divide-line border-y border-line" data-reveal>
         {rows.map(([k, v]) => (
           <div key={k} className="flex justify-between gap-4 py-3.5">
             <dt className="text-ink-soft">{k}</dt>
@@ -109,7 +107,7 @@ export default async function LotPage({ params }: Props) {
 
       {lot.info.note && <p className="mt-6 text-sm text-ink-soft">{lot.info.note}</p>}
 
-      <div className="mt-8 bg-graphite p-6 text-bone">
+      <div className="mt-8 bg-graphite p-6 text-bone" data-reveal="zoom">
         <p className="eyebrow text-bone/60">Điều sản phẩm không làm</p>
         <p className="mt-3">Không làm mọc tóc. Không trị rụng tóc. Giúp da đầu dịu và thoáng.</p>
       </div>
@@ -138,10 +136,9 @@ function LotProblem({ lotNo, title, body, hint, complaintLot }: { lotNo: string;
     <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">
       <div className="flex items-center justify-between">
         <p className="eyebrow text-ink-soft">{LOT_COPY.eyebrow}</p>
-        <Mark className="h-7 w-7 text-rind" />
       </div>
       {lotNo && <p className="mt-8 break-all font-mono text-lg tracking-wider text-ink-soft">{lotNo}</p>}
-      <h1 className="display mt-2 text-3xl sm:text-4xl">{title}</h1>
+      <h1 className="display enter mt-2 text-3xl sm:text-4xl">{title}</h1>
       <p className="mt-4 leading-relaxed">
         <KeepFormat text={body} />
       </p>

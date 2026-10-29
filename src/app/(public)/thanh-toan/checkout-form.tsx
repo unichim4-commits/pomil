@@ -20,7 +20,7 @@ export function CheckoutForm(props: Props) {
 
   return (
     <form method="post" onSubmit={onSubmit} className="space-y-10" noValidate>
-      <fieldset className="space-y-4">
+      <fieldset data-reveal style={{ ["--d" as string]: "0ms" }} className="space-y-4">
         <legend className="eyebrow mb-2">Người nhận</legend>
         <Field label="Họ và tên" name="recipientName" autoComplete="name" error={err("recipientName")} required />
         <div className="grid gap-4 sm:grid-cols-2">
@@ -29,7 +29,7 @@ export function CheckoutForm(props: Props) {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4">
+      <fieldset data-reveal style={{ ["--d" as string]: "80ms" }} className="space-y-4">
         <legend className="eyebrow mb-2">Địa chỉ giao hàng</legend>
         <label className="block">
           <span className="field-label">Tỉnh / Thành phố</span>
@@ -51,7 +51,7 @@ export function CheckoutForm(props: Props) {
         </label>
       </fieldset>
 
-      <fieldset>
+      <fieldset data-reveal style={{ ["--d" as string]: "160ms" }}>
         <legend className="eyebrow mb-4">Thanh toán</legend>
         <div className="space-y-3">
           {props.codEnabled && (
@@ -76,9 +76,9 @@ export function CheckoutForm(props: Props) {
         {err("paymentMethod") && <p className="mt-2 text-sm text-danger">{err("paymentMethod")}</p>}
       </fieldset>
 
-      <fieldset className="space-y-3 text-sm">
+      <fieldset data-reveal style={{ ["--d" as string]: "240ms" }} className="space-y-3 text-sm">
         <label className="flex items-start gap-3">
-          <input type="checkbox" name="dataConsent" className="mt-1 h-4 w-4 accent-graphite" aria-invalid={!!err("dataConsent")} />
+          <input type="checkbox" name="dataConsent" className="mt-0.5 h-5 w-5 shrink-0 accent-graphite" aria-invalid={!!err("dataConsent")} />
           <span>
             {props.dataConsentText}{" "}
             <Link href="/chinh-sach-bao-mat" target="_blank" className="underline underline-offset-4">
@@ -89,7 +89,7 @@ export function CheckoutForm(props: Props) {
         {err("dataConsent") && <p className="pl-7 text-danger">{err("dataConsent")}</p>}
         <label className="flex items-start gap-3 text-ink-soft">
           {/* Không tích sẵn (SYS-20) */}
-          <input type="checkbox" name="marketingConsent" className="mt-1 h-4 w-4 accent-graphite" />
+          <input type="checkbox" name="marketingConsent" className="mt-0.5 h-5 w-5 shrink-0 accent-graphite" />
           <span>{props.marketingConsentText}</span>
         </label>
       </fieldset>

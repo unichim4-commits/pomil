@@ -23,8 +23,8 @@ export default async function TransparencyPage({ searchParams }: Props) {
     <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
       <div className="grid gap-14 md:grid-cols-2">
         <div>
-          <p className="eyebrow text-rind">Truy xuất</p>
-          <h1 className="display mt-4 text-5xl">Minh bạch từng lô</h1>
+          <p className="eyebrow enter text-rind">Truy xuất</p>
+          <h1 className="display enter mt-4 text-5xl" style={{ ["--d" as string]: "100ms" }}>Minh bạch từng lô</h1>
           <p className="mt-6 text-lg leading-relaxed text-ink-soft">
             Mỗi chai Pomil có một số lô in dưới đáy và một mã QR. Quét mã hoặc nhập số lô để xem vỏ bưởi lấy từ đâu, thu hoạch khi nào, đóng chai ngày nào, và kết quả kiểm nghiệm vi sinh, kim loại nặng của chính lô đó.
           </p>
@@ -43,7 +43,7 @@ export default async function TransparencyPage({ searchParams }: Props) {
             )}
           </form>
         </div>
-        <div className="space-y-px bg-line">
+        <div className="space-y-px bg-line" data-reveal="right">
           {[
             ["Lô chỉ hiện khi đã qua cách ly", "Trang lô chỉ mở sau khi lô có đủ phiếu kiểm nghiệm và được duyệt xuất kho."],
             ["Ô trống là ô chưa có số", "Bọn mình chỉ điền số đo thật, không điền trước, không làm tròn cho đẹp."],

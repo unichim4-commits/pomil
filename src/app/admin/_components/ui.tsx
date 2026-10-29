@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: React.ReactNode }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <div className="enter mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <h1 className="text-2xl font-light tracking-tight">{title}</h1>
         {description && <p className="mt-1 max-w-2xl text-sm text-ink-soft">{description}</p>}
@@ -14,7 +14,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
 
 export function Card({ title, children, className = "", actions }: { title?: string; children: React.ReactNode; className?: string; actions?: React.ReactNode }) {
   return (
-    <section className={`border border-line bg-paper ${className}`}>
+    <section className={`border border-line bg-paper ${className}`} data-reveal>
       {title && (
         <div className="flex items-center justify-between border-b border-line px-5 py-3">
           <h2 className="eyebrow text-[0.68rem]">{title}</h2>
@@ -35,11 +35,11 @@ export function Stat({ label, value, hint, href }: { label: string; value: strin
     </>
   );
   return href ? (
-    <Link href={href} className="block border border-line bg-paper p-5 transition hover:border-graphite">
+    <Link href={href} className="lift block border border-line bg-paper p-5 hover:border-graphite" data-reveal>
       {body}
     </Link>
   ) : (
-    <div className="border border-line bg-paper p-5">{body}</div>
+    <div className="border border-line bg-paper p-5" data-reveal>{body}</div>
   );
 }
 
@@ -69,7 +69,7 @@ export const ORDER_TONE: Record<string, BadgeTone> = {
 
 export function Table({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto border border-line bg-paper">
+    <div className="rows-in overflow-x-auto border border-line bg-paper">
       <table className="w-full min-w-[640px] text-left text-sm [&_td]:border-t [&_td]:border-line [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-xs [&_th]:font-medium [&_th]:text-ink-soft">
         {children}
       </table>
@@ -112,7 +112,7 @@ export function FilterTabs({ items, active }: { items: { href: string; label: st
         <Link
           key={item.key}
           href={item.href}
-          className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm ${item.key === active ? "border-graphite text-graphite" : "border-transparent text-ink-soft hover:text-graphite"}`}
+          className={`inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 text-sm ${item.key === active ? "border-graphite text-graphite" : "border-transparent text-ink-soft hover:text-graphite"}`}
         >
           {item.label}
           {item.count !== undefined && <span className="ml-1.5 text-xs text-ink-soft">{item.count}</span>}

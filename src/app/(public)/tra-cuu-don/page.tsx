@@ -19,8 +19,8 @@ export default async function OrderLookupPage({ searchParams }: { searchParams: 
   const { loi } = await searchParams;
   return (
     <div className="mx-auto max-w-md px-4 py-20 sm:px-6">
-      <p className="eyebrow text-rind">Đơn hàng</p>
-      <h1 className="display mt-4 text-4xl">Tra cứu đơn hàng</h1>
+      <p className="eyebrow enter text-rind">Đơn hàng</p>
+      <h1 className="display enter mt-4 text-4xl" style={{ ["--d" as string]: "100ms" }}>Tra cứu đơn hàng</h1>
       <p className="mt-3 text-ink-soft">Nhập mã đơn (ví dụ WEB-2711-0001) và số điện thoại đã dùng khi đặt.</p>
       <form action={lookup} className="mt-8 space-y-4">
         <label className="block">

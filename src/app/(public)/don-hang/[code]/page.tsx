@@ -36,7 +36,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
         </div>
       )}
 
-      <div className="border border-line bg-paper p-6 sm:p-8">
+      <div className="enter border border-line bg-paper p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="eyebrow text-ink-soft">Mã đơn</p>
@@ -49,7 +49,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
         {!ended && (
           <ol className="mt-8 grid grid-cols-5 gap-1" aria-label="Tiến trình đơn">
             {STEPS.map((s, i) => (
-              <li key={s} className="text-center">
+              <li key={s} className="enter text-center" style={{ ["--d" as string]: `${300 + i * 110}ms` }}>
                 <div className={`h-1 ${i <= stepIndex ? "bg-rind" : "bg-line"}`} />
                 <p className={`mt-2 text-[0.7rem] leading-tight ${i <= stepIndex ? "text-graphite" : "text-ink-soft/70"}`}>{ORDER_STATUS_LABEL[s]}</p>
               </li>
@@ -64,7 +64,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
       </div>
 
       {needsTransfer && (
-        <div className="mt-6 grid gap-6 border border-graphite p-6 sm:grid-cols-[12rem_1fr] sm:p-8">
+        <div className="mt-6 grid gap-6 border border-graphite p-6 sm:grid-cols-[12rem_1fr] sm:p-8" data-reveal>
           {qr ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={qr} alt={`Mã QR chuyển khoản ${formatVnd(order.total)} cho đơn ${order.code}`} className="w-48 bg-white" />
@@ -106,7 +106,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2">
+      <div className="mt-6 grid gap-6 sm:grid-cols-2" data-reveal>
         <section className="border border-line p-6">
           <h2 className="eyebrow">Sản phẩm</h2>
           <ul className="mt-4 space-y-2 text-sm">
