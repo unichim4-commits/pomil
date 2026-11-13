@@ -5,7 +5,8 @@ import { requirePermission } from "@/modules/auth/service";
 import { checkClaims, describeViolations } from "@/modules/content/rules";
 import { invalidRecipients } from "@/modules/notify/rules";
 import { storeSettingsSchema } from "@/modules/settings/schema";
-import { saveSettings } from "@/modules/settings/service";
+import { getErpSettings, saveErpSettings, saveSettings } from "@/modules/settings/service";
+import { parseErpForm } from "./erp-form";
 import { fail, guard, ok, type ActionResult } from "../_lib/result";
 
 const TEXT_KEYS = ["storeName", "tagline", "hotline", "zalo", "email", "address", "businessInfo", "tiktok", "instagram", "facebook", "shopee", "announcement", "launchNote", "shippingNote", "bankBin", "bankName", "bankAccountNo", "bankAccountName", "notifyEmails", "notifyZaloUserIds"] as const;
@@ -38,5 +39,18 @@ export async function saveSettingsAction(_prev: ActionResult, formData: FormData
     await saveSettings(s, staff.id);
     revalidatePath("/", "layout");
     return ok("Đã lưu cài đặt.");
+  });
+}
+
+// Cài đặt vận hành 5 phân hệ (khóa erp, 00-tong-quan mục 10)
+export async function saveErpSettingsAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  return guard(async () => {
+    const staff = await requirePermission("settings.write");
+    const current = await getErpSettings();
+    const r = parseErpForm((k) => String(formData.get(k) ?? ""), current);
+    if (!r.ok) return fail(r.message);
+    await saveErpSettings(r.value, staff.id);
+    revalidatePath("/admin", "layout");
+    return ok("Đã lưu cài đặt vận hành.");
   });
 }

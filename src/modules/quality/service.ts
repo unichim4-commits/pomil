@@ -1,10 +1,11 @@
 import "server-only";
 import { and, eq, gt } from "drizzle-orm";
-import { getDb } from "@/db/client";
+import { getDb, type Tx } from "@/db/client";
 import { complaints, lots, lotTests, notifications } from "@/db/schema";
 import { writeAudit } from "@/lib/audit";
 import { UserError } from "@/lib/errors";
-import { classifyLotLookup, evaluateLotRelease, HOLD_WINDOW_DAYS, shouldHoldLot } from "./rules";
+import { syncSellableStock } from "@/modules/inventory/ledger";
+import { classifyLotLookup, evaluateLotRelease, HOLD_WINDOW_DAYS, shouldHoldLot, type ReleaseBlocker } from "./rules";
 
 export type ComplaintInput = {
   lotNo: string | null;
@@ -57,6 +58,7 @@ export async function submitComplaint(input: ComplaintInput): Promise<{ complain
           after: { releaseStatus: "on_hold", complaints: recent.length },
         });
         lotHeld = true;
+        await syncSellableStock(tx, lot.productId);
       }
     }
 
@@ -68,32 +70,36 @@ export async function submitComplaint(input: ComplaintInput): Promise<{ complain
 // Duyệt xuất kho: chỉ khi qua hết điều kiện ở evaluateLotRelease.
 export async function releaseLot(lotId: string, actorId: string) {
   const db = await getDb();
-  return db.transaction(async (tx) => {
-    const lot = await tx.query.lots.findFirst({ where: eq(lots.id, lotId) });
-    if (!lot) throw new UserError("Không tìm thấy lô");
+  return db.transaction((tx) => releaseLotInTx(tx, lotId, actorId));
+}
 
-    const tests = await tx.select({ type: lotTests.type, result: lotTests.result }).from(lotTests).where(eq(lotTests.lotId, lotId));
-    const notification = await tx.query.notifications.findFirst({ where: eq(notifications.productId, lot.productId) });
+// Thân của releaseLot, chạy trong giao dịch của người gọi (00 mục 8.3). Đạt thì đặt released và tính lại số bán được.
+export async function releaseLotInTx(tx: Tx, lotId: string, actorId: string): Promise<{ ok: boolean; blockers: ReleaseBlocker[] }> {
+  const lot = await tx.query.lots.findFirst({ where: eq(lots.id, lotId) });
+  if (!lot) throw new UserError("Không tìm thấy lô");
 
-    const verdict = evaluateLotRelease({
-      status: lot.releaseStatus,
-      expiresOn: new Date(lot.expiresOn),
-      tests,
-      notificationExpiresAt: notification ? new Date(notification.expiresAt) : null,
-    });
-    if (!verdict.ok) return verdict;
+  const tests = await tx.select({ type: lotTests.type, result: lotTests.result }).from(lotTests).where(eq(lotTests.lotId, lotId));
+  const notification = await tx.query.notifications.findFirst({ where: eq(notifications.productId, lot.productId) });
 
-    await tx.update(lots).set({ releaseStatus: "released", releasedBy: actorId, releasedAt: new Date() }).where(eq(lots.id, lotId));
-    await writeAudit(tx, {
-      actorId,
-      action: "lot.released",
-      entity: "lots",
-      entityId: lotId,
-      before: { releaseStatus: lot.releaseStatus },
-      after: { releaseStatus: "released" },
-    });
-    return verdict;
+  const verdict = evaluateLotRelease({
+    status: lot.releaseStatus,
+    expiresOn: new Date(lot.expiresOn),
+    tests,
+    notificationExpiresAt: notification ? new Date(notification.expiresAt) : null,
   });
+  if (!verdict.ok) return verdict;
+
+  await tx.update(lots).set({ releaseStatus: "released", releasedBy: actorId, releasedAt: new Date() }).where(eq(lots.id, lotId));
+  await writeAudit(tx, {
+    actorId,
+    action: "lot.released",
+    entity: "lots",
+    entityId: lotId,
+    before: { releaseStatus: lot.releaseStatus },
+    after: { releaseStatus: "released" },
+  });
+  await syncSellableStock(tx, lot.productId);
+  return verdict;
 }
 
 // Dữ liệu cho trang lô công khai. Phân biệt: không có lô, lô chưa mở (chưa công khai hoặc đang

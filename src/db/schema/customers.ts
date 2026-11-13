@@ -47,6 +47,8 @@ export const customers = pgTable(
     expectedRunoutDate: timestamp("expected_runout_date", { withTimezone: true }),
     // Ẩn danh hóa khi khách yêu cầu xóa: giữ dòng để sổ sách còn đúng
     anonymizedAt: timestamp("anonymized_at", { withTimezone: true }),
+    // Nhãn phân nhóm (CRM)
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

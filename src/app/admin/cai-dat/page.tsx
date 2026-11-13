@@ -2,19 +2,20 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { can } from "@/modules/auth/rules";
 import { requireStaff } from "@/modules/auth/service";
-import { getSettings } from "@/modules/settings/service";
+import { getErpSettings, getSettings } from "@/modules/settings/service";
 import { emailConfigured, zaloConfigured } from "@/modules/notify/channels";
 import Link from "next/link";
 import { ActionForm } from "../_components/action-form";
 import { Card, PageHeader } from "../_components/ui";
-import { saveSettingsAction } from "./actions";
+import { saveErpSettingsAction, saveSettingsAction } from "./actions";
+import { ERP_FIELDS, UNIT_LABEL, erpFieldValue } from "./erp-form";
 
 export const metadata: Metadata = { title: "Cài đặt cửa hàng" };
 
 export default async function SettingsPage() {
   const staff = await requireStaff();
   if (!can(staff.role, "settings.write")) redirect("/admin");
-  const s = await getSettings();
+  const [s, erp] = await Promise.all([getSettings(), getErpSettings()]);
 
   const text = (name: keyof typeof s, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}, hint?: string) => (
     <label className="block">
@@ -116,6 +117,26 @@ export default async function SettingsPage() {
             </div>
           </Card>
         </div>
+      </ActionForm>
+
+      <ActionForm action={saveErpSettingsAction} submitLabel="Lưu cài đặt vận hành" className="mt-10 space-y-6">
+        <Card title="Vận hành: kho, sản xuất, bán hàng, tài chính">
+          <p className="mb-4 text-sm text-ink-soft">Ngưỡng cảnh báo cho các phân hệ. Số mặc định là giả định, sửa theo thực tế.</p>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {ERP_FIELDS.map((f) => (
+              <label key={f.key} className="block">
+                <span className="field-label">
+                  {f.label} ({UNIT_LABEL[f.unit]})
+                </span>
+                <input name={f.key} inputMode={f.unit === "percent" ? "decimal" : "numeric"} defaultValue={erpFieldValue(erp, f)} required className="field tabular-nums" aria-describedby={`${f.key}-hint`} />
+                <span id={`${f.key}-hint`} className="mt-1 block text-xs text-ink-soft">
+                  {f.hint}
+                </span>
+              </label>
+            ))}
+          </div>
+          {erp.lastExpiryRefreshAt && <p className="mt-4 text-xs text-ink-soft">Lần cuối rà lô hết hạn: {new Date(erp.lastExpiryRefreshAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</p>}
+        </Card>
       </ActionForm>
     </>
   );

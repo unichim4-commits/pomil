@@ -1,8 +1,11 @@
 import "server-only";
-import { and, count, desc, eq, ilike, isNull, like, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNull, like, or, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { consents, customers, orders, touchpoints } from "@/db/schema";
+import { complaints, consents, customers, orderItems, orders, returnRequests, touchpoints } from "@/db/schema";
 import { writeAudit } from "@/lib/audit";
+import { UserError } from "@/lib/errors";
+import { assertCan, type Actor } from "@/modules/sales/access";
+import { addTag, careNoteProblem, customerMetrics, normalizeTag } from "@/modules/sales/rules";
 
 export const CUSTOMER_PAGE_SIZE = 30;
 type Stage = (typeof customers.$inferSelect)["lifecycleStage"];
@@ -16,13 +19,14 @@ export const STAGE_LABEL: Record<Stage, string> = {
   churned: "Rời đi",
 };
 
-export async function listCustomers(filter: { q?: string; stage?: Stage; page?: number }) {
+export async function listCustomers(filter: { q?: string; stage?: Stage; page?: number; tag?: string }) {
   const db = await getDb();
   const q = filter.q?.trim();
   const digits = q?.replace(/\D/g, "").replace(/^0/, "");
   const where = and(
     isNull(customers.anonymizedAt),
     filter.stage ? eq(customers.lifecycleStage, filter.stage) : undefined,
+    filter.tag ? sql`${customers.tags} @> ${JSON.stringify([normalizeTag(filter.tag)])}::jsonb` : undefined,
     q ? or(ilike(customers.name, `%${q}%`), digits && digits.length >= 3 ? like(customers.phoneE164, `%${digits}%`) : undefined, eq(customers.referralCode, q.toUpperCase())) : undefined,
   );
   const page = Math.max(1, filter.page ?? 1);
@@ -43,6 +47,7 @@ export async function listCustomers(filter: { q?: string; stage?: Stage; page?: 
         name: customers.name,
         phoneE164: customers.phoneE164,
         stage: customers.lifecycleStage,
+        tags: customers.tags,
         createdAt: customers.createdAt,
         orders: sql<number>`coalesce(${orderStats.n}, 0)`,
         spent: sql<number>`coalesce(${orderStats.spent}, 0)`,
@@ -74,6 +79,89 @@ export async function getCustomerDetail(id: string) {
     db.select().from(touchpoints).where(eq(touchpoints.customerId, id)).orderBy(desc(touchpoints.occurredAt)).limit(50),
   ]);
   return { customer, orders: customerOrders, consents: customerConsents, timeline };
+}
+
+// R-BH-27: chỉ số khách, phản ánh, đổi trả, ghi chú chăm sóc
+export async function getCustomerCrm(id: string) {
+  const db = await getDb();
+  const customer = await db.query.customers.findFirst({ where: eq(customers.id, id) });
+  if (!customer) return null;
+  const os = await db.select().from(orders).where(eq(orders.customerId, id));
+  const ids = os.map((o) => o.id);
+  const [items, refunds, returns, notes, complaintRows] = await Promise.all([
+    ids.length ? db.select({ orderId: orderItems.orderId, productId: orderItems.productId, productName: orderItems.productName, quantity: orderItems.quantity }).from(orderItems).where(inArray(orderItems.orderId, ids)) : Promise.resolve([]),
+    ids.length
+      ? db
+          .select({ orderId: returnRequests.orderId, v: sql<string>`sum(${returnRequests.refundAmount})` })
+          .from(returnRequests)
+          .where(and(inArray(returnRequests.orderId, ids), eq(returnRequests.status, "completed")))
+          .groupBy(returnRequests.orderId)
+      : Promise.resolve([]),
+    ids.length ? db.select({ r: returnRequests, orderCode: orders.code }).from(returnRequests).innerJoin(orders, eq(orders.id, returnRequests.orderId)).where(inArray(returnRequests.orderId, ids)).orderBy(desc(returnRequests.requestedAt)) : Promise.resolve([]),
+    db.select().from(touchpoints).where(and(eq(touchpoints.customerId, id), eq(touchpoints.type, "care_note"))).orderBy(desc(touchpoints.occurredAt)),
+    db
+      .select()
+      .from(complaints)
+      .where(customer.phoneE164 ? or(eq(complaints.customerId, id), eq(complaints.contactPhone, customer.phoneE164)) : eq(complaints.customerId, id))
+      .orderBy(desc(complaints.openedAt)),
+  ]);
+  const metrics = customerMetrics(
+    os.map((o) => ({
+      status: o.status,
+      total: o.total,
+      createdAt: o.createdAt,
+      refunded: Number(refunds.find((r) => r.orderId === o.id)?.v ?? 0),
+      items: items.filter((i) => i.orderId === o.id),
+    })),
+  );
+  return { metrics, returns, notes, complaints: complaintRows };
+}
+
+// R-BH-28: nhãn phân nhóm
+export async function addCustomerTag(customerId: string, raw: string, actor: Actor): Promise<void> {
+  assertCan(actor, "sales.write");
+  const db = await getDb();
+  await db.transaction(async (tx) => {
+    const [c] = await tx.select({ tags: customers.tags }).from(customers).where(eq(customers.id, customerId)).for("update");
+    if (!c) throw new UserError("Không tìm thấy khách");
+    const r = addTag(c.tags ?? [], raw);
+    if (!r.ok) throw new UserError(r.message);
+    if (r.tags.length === (c.tags ?? []).length) return;
+    await tx.update(customers).set({ tags: r.tags, updatedAt: new Date() }).where(eq(customers.id, customerId));
+    await writeAudit(tx, { actorId: actor.id, action: "customer.tags", entity: "customers", entityId: customerId, before: { tags: c.tags }, after: { tags: r.tags } });
+  });
+}
+
+export async function removeCustomerTag(customerId: string, tag: string, actor: Actor): Promise<void> {
+  assertCan(actor, "sales.write");
+  const db = await getDb();
+  await db.transaction(async (tx) => {
+    const [c] = await tx.select({ tags: customers.tags }).from(customers).where(eq(customers.id, customerId)).for("update");
+    if (!c) throw new UserError("Không tìm thấy khách");
+    const next = (c.tags ?? []).filter((t) => t !== normalizeTag(tag));
+    await tx.update(customers).set({ tags: next, updatedAt: new Date() }).where(eq(customers.id, customerId));
+    await writeAudit(tx, { actorId: actor.id, action: "customer.tags", entity: "customers", entityId: customerId, before: { tags: c.tags }, after: { tags: next } });
+  });
+}
+
+// R-BH-28: ghi chú chăm sóc (touchpoints care_note)
+export async function addCareNote(customerId: string, text: string, actor: Actor): Promise<void> {
+  assertCan(actor, "sales.write");
+  const problem = careNoteProblem(text);
+  if (problem) throw new UserError(problem);
+  const db = await getDb();
+  await db.transaction(async (tx) => {
+    const [c] = await tx.select({ id: customers.id }).from(customers).where(eq(customers.id, customerId));
+    if (!c) throw new UserError("Không tìm thấy khách");
+    await tx.insert(touchpoints).values({ customerId, type: "care_note", payload: { text: text.trim(), staffId: actor.id } });
+    await writeAudit(tx, { actorId: actor.id, action: "customer.care_note", entity: "customers", entityId: customerId });
+  });
+}
+
+export async function allCustomerTags(): Promise<string[]> {
+  const db = await getDb();
+  const rows = await db.select({ tag: sql<string>`jsonb_array_elements_text(${customers.tags})` }).from(customers);
+  return [...new Set(rows.map((r) => r.tag))].sort();
 }
 
 // Rút đồng ý nhận tin theo yêu cầu của khách (qua điện thoại, Zalo). Ghi bản ghi mới, không xóa bằng chứng cũ.

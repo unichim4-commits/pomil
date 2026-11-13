@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { addToCart, cartCount, parseCart, serializeCart, setQuantity } from "@/modules/cart/rules";
 import {
+  awaitsPacking,
   canTransition,
   formatOrderCode,
+  isOrderPacked,
   nextLifecycleStage,
   priceCart,
   restoresStock,
@@ -81,6 +83,22 @@ describe("order status", () => {
     expect(restoresStock("cancelled")).toBe(true);
     expect(restoresStock("returned")).toBe(true);
     expect(restoresStock("delivered")).toBe(false);
+  });
+});
+
+describe("đóng gói (R-BH-13, BUG-6)", () => {
+  it("đã gói khi Đang đóng gói và có sự kiện packed hoặc đã xuất kho; không cần xuất kho", () => {
+    expect(isOrderPacked({ status: "packing", stockIssuedAt: null, hasPackedEvent: true })).toBe(true);
+    expect(isOrderPacked({ status: "packing", stockIssuedAt: new Date(), hasPackedEvent: false })).toBe(true);
+    expect(isOrderPacked({ status: "packing", stockIssuedAt: null, hasPackedEvent: false })).toBe(false);
+    expect(isOrderPacked({ status: "confirmed", stockIssuedAt: new Date(), hasPackedEvent: false })).toBe(false);
+  });
+  it("chờ đóng gói: đã xác nhận hoặc Đang đóng gói chưa gói thật", () => {
+    expect(awaitsPacking({ status: "confirmed", stockIssuedAt: null, hasPackedEvent: false })).toBe(true);
+    expect(awaitsPacking({ status: "packing", stockIssuedAt: null, hasPackedEvent: false })).toBe(true);
+    expect(awaitsPacking({ status: "packing", stockIssuedAt: null, hasPackedEvent: true })).toBe(false);
+    expect(awaitsPacking({ status: "shipping", stockIssuedAt: null, hasPackedEvent: true })).toBe(false);
+    expect(awaitsPacking({ status: "pending", stockIssuedAt: null, hasPackedEvent: false })).toBe(false);
   });
 });
 

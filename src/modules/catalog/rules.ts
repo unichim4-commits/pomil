@@ -55,3 +55,67 @@ export function initialStockProblem(value: number): string | null {
   if (value > STOCK_MAX) return `Tồn kho tối đa ${STOCK_MAX.toLocaleString("vi-VN")} chai.`;
   return null;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Sản phẩm mở rộng (02-san-xuat.md R-SX-1, R-SX-2)
+
+export const DEV_STAGES = ["developing", "testing", "commercial", "discontinued"] as const;
+export type DevStage = (typeof DEV_STAGES)[number];
+
+export const DEV_STAGE_LABEL: Record<DevStage, string> = {
+  developing: "Đang phát triển",
+  testing: "Thử nghiệm",
+  commercial: "Thương mại",
+  discontinued: "Ngừng sản xuất",
+};
+
+export const CATEGORY_LABEL: Record<string, string> = {
+  tonic: "Nước dưỡng da đầu",
+  shampoo: "Dầu gội",
+  conditioner: "Dầu xả",
+  hair_serum: "Serum tóc",
+  skincare: "Chăm sóc da",
+  essential_oil: "Tinh dầu",
+  other: "Khác",
+};
+
+export const DISCONTINUED_ACTIVE = "Sản phẩm ngừng sản xuất không để ở trạng thái đang bán";
+
+// R-SX-1: chặn ngừng sản xuất + đang bán; cảnh báo đang phát triển/thử nghiệm + đang bán
+export function checkDevStage(devStage: DevStage, status: string): { error: string | null; warning: string | null } {
+  if (status !== "active") return { error: null, warning: null };
+  if (devStage === "discontinued") return { error: DISCONTINUED_ACTIVE, warning: null };
+  if (devStage === "developing" || devStage === "testing") return { error: null, warning: `Sản phẩm đang ở giai đoạn ${DEV_STAGE_LABEL[devStage].toLowerCase()} mà để đang bán` };
+  return { error: null, warning: null };
+}
+
+// R-SX-1: form không gửi dev_stage → giữ giá trị cũ; tạo mới → commercial nếu đang bán, ngược lại developing
+export function resolveDevStage(sent: DevStage | null | undefined, existing: DevStage | null, status: string): DevStage {
+  if (sent) return sent;
+  if (existing) return existing;
+  return status === "active" ? "commercial" : "developing";
+}
+
+export function isCategory(v: string): boolean {
+  return v === "" || v in CATEGORY_LABEL;
+}
+
+// R-SX-2: GTIN-13, số kiểm tra theo trọng số 1-3 từ trái
+export function checkGtin13(raw: string): string | null {
+  const code = raw.trim();
+  if (!/^\d{13}$/.test(code)) return "Mã vạch phải gồm đúng 13 chữ số";
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += Number(code[i]) * (i % 2 === 0 ? 1 : 3);
+  const check = (10 - (sum % 10)) % 10;
+  if (check !== Number(code[12])) return "Mã vạch sai số kiểm tra";
+  return null;
+}
+
+// Ô "size" trống thì gợi ý từ dung tích tịnh: 100.000 ul → "100 ml"; 50.000 mg → "50 g"
+export function sizeLabelFromNet(netQty: number | null, netUom: "mg" | "ul" | null): string {
+  if (!netQty || !netUom) return "";
+  const unit = netUom === "ul" ? (netQty >= 1_000_000 ? "l" : "ml") : netQty >= 1_000_000 ? "kg" : "g";
+  const factor = unit === "l" || unit === "kg" ? 1_000_000 : 1_000;
+  const value = netQty / factor;
+  return `${value.toLocaleString("vi-VN", { maximumFractionDigits: 3 })} ${unit}`;
+}

@@ -28,6 +28,19 @@ export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
   return ORDER_TRANSITIONS[from].includes(to);
 }
 
+// Đã đóng gói (R-BH-13): đơn ở "Đang đóng gói" và đã có sự kiện "packed" hoặc đã xuất kho.
+// Không dựa riêng vào stockIssuedAt: đơn chỉ có sản phẩm chưa quản lý kho không bao giờ xuất kho.
+export type PackState = { status: OrderStatus; stockIssuedAt: Date | string | null; hasPackedEvent: boolean };
+
+export function isOrderPacked(o: PackState): boolean {
+  return o.status === "packing" && (o.hasPackedEvent || o.stockIssuedAt !== null);
+}
+
+// Chờ đóng gói: đã xác nhận, hoặc chuyển sang "Đang đóng gói" mà chưa gói thật
+export function awaitsPacking(o: PackState): boolean {
+  return (o.status === "confirmed" || o.status === "packing") && !isOrderPacked(o);
+}
+
 // Hàng đã trừ kho lúc đặt, nên hủy hoặc hoàn trả thì cộng lại.
 export function restoresStock(to: OrderStatus): boolean {
   return to === "cancelled" || to === "returned";

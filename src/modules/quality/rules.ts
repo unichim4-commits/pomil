@@ -63,7 +63,7 @@ export function isResponseOverdue(openedAt: Date, firstResponseAt: Date | null, 
   return now.getTime() - openedAt.getTime() > 24 * 60 * 60 * 1000;
 }
 
-export type LotReleaseStatus = "quarantine" | "released" | "on_hold" | "recalled";
+export type LotReleaseStatus = "quarantine" | "released" | "on_hold" | "recalled" | "rejected";
 export type LotLookup = "bad_format" | "missing" | "pending" | "public";
 
 // Trang lô công khai: phân biệt sai định dạng, không có lô, lô chưa mở (chưa công khai hoặc đang
@@ -71,7 +71,7 @@ export type LotLookup = "bad_format" | "missing" | "pending" | "public";
 export function classifyLotLookup(validFormat: boolean, lot: { isPublic: boolean; releaseStatus: LotReleaseStatus } | null): LotLookup {
   if (!validFormat) return "bad_format";
   if (!lot) return "missing";
-  if (!lot.isPublic || lot.releaseStatus === "quarantine") return "pending";
+  if (!lot.isPublic || lot.releaseStatus === "quarantine" || lot.releaseStatus === "rejected") return "pending";
   return "public";
 }
 

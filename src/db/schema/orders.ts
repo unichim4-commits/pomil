@@ -1,4 +1,5 @@
-import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { Utm } from "@/lib/utm";
 import { products } from "./catalog";
 import { customerAccounts } from "./accounts";
@@ -6,7 +7,8 @@ import { customers } from "./customers";
 import { lots } from "./quality";
 
 export const orderStatus = pgEnum("order_status", ["pending", "confirmed", "packing", "shipping", "delivered", "cancelled", "returned"]);
-export const paymentMethod = pgEnum("payment_method", ["cod", "bank_transfer"]);
+// cash: tiền mặt tại chỗ · platform: sàn thu hộ · credit: mua chịu (đại lý). Checkout web chỉ cho cod, bank_transfer.
+export const paymentMethod = pgEnum("payment_method", ["cod", "bank_transfer", "cash", "platform", "credit"]);
 export const paymentStatus = pgEnum("payment_status", ["unpaid", "paid", "refunded"]);
 
 export const orders = pgTable(
@@ -39,13 +41,35 @@ export const orders = pgTable(
     trackingNo: text("tracking_no"),
     internalNote: text("internal_note"),
     cancelReason: text("cancel_reason"),
+    // Mở rộng Bán hàng (00 mục 3.2). Bất biến: total = subtotal − discount_total + shipping_fee.
+    discountTotal: integer("discount_total").notNull().default(0),
+    voucherCode: text("voucher_code"),
+    platformFee: integer("platform_fee").notNull().default(0),
+    // → dealers, price_lists (không FK, tránh vòng import)
+    dealerId: uuid("dealer_id"),
+    priceListId: uuid("price_list_id"),
+    // Mã đơn trên sàn
+    externalRef: text("external_ref"),
+    // Nhân viên tạo đơn tay; đơn web để null
+    createdBy: uuid("created_by"),
+    // Lúc hàng thật rời kho FG (R-KHO-24)
+    stockIssuedAt: timestamp("stock_issued_at", { withTimezone: true }),
+    // 'delivery_failed' | 'customer_return' khi status = returned
+    returnType: text("return_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     shippedAt: timestamp("shipped_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
   },
-  (t) => [index("orders_status_created_idx").on(t.status, t.createdAt), index("orders_phone_idx").on(t.phoneE164), index("orders_account_idx").on(t.accountId, t.createdAt)],
+  (t) => [
+    index("orders_status_created_idx").on(t.status, t.createdAt),
+    index("orders_phone_idx").on(t.phoneE164),
+    index("orders_account_idx").on(t.accountId, t.createdAt),
+    uniqueIndex("orders_channel_external_ref_uq").on(t.channel, t.externalRef).where(sql`${t.externalRef} is not null`),
+    check("orders_discount_total_chk", sql`${t.discountTotal} >= 0 and ${t.discountTotal} <= ${t.subtotal}`),
+    check("orders_platform_fee_chk", sql`${t.platformFee} >= 0`),
+  ],
 );
 
 export const orderItems = pgTable(
@@ -65,6 +89,8 @@ export const orderItems = pgTable(
     lineTotal: integer("line_total").notNull(),
     // Gán khi đóng gói để truy được chai nào thuộc lô nào
     lotId: uuid("lot_id").references(() => lots.id),
+    // Dòng tách ra khi một dòng xuất từ nhiều lô (R-BH-13)
+    splitFromId: uuid("split_from_id").references((): AnyPgColumn => orderItems.id),
   },
   (t) => [index("order_items_order_idx").on(t.orderId)],
 );

@@ -96,3 +96,10 @@ export const notificationLog = pgTable(
   },
   (t) => [index("notification_log_created_idx").on(t.createdAt), index("notification_log_status_idx").on(t.status)],
 );
+
+// Bộ đếm mã chứng từ (R-CHUNG-7): key = "PN-2611", "FORM", "NL"…; tăng bằng INSERT … ON CONFLICT DO UPDATE.
+export const docSequences = pgTable("doc_sequences", {
+  key: text("key").primaryKey(),
+  lastValue: integer("last_value").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

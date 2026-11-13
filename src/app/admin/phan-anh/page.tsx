@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { displayPhone, formatDateTime } from "@/lib/format";
 import { maskPhone, normalizeVnPhone } from "@/lib/phone";
 import { can } from "@/modules/auth/rules";
@@ -7,6 +8,8 @@ import { COMPLAINT_STATUS_LABEL, listComplaints, SEVERITY_LABEL } from "@/module
 import { complaintLotLabel, complaintResponseBadge } from "@/modules/quality/rules";
 import { ActionForm } from "../_components/action-form";
 import { Badge, Empty, FilterTabs, PageHeader } from "../_components/ui";
+import { complaintLinks } from "@/modules/qms/admin";
+import { createCapaFromComplaintAction, createNcrFromComplaintAction, openRecheckAction } from "../chat-luong/actions";
 import { complaintAction } from "../lo/actions";
 
 export const metadata: Metadata = { title: "Phản ánh" };
@@ -19,6 +22,8 @@ export default async function ComplaintsPage({ searchParams }: { searchParams: P
   const [staff, rows] = await Promise.all([requireStaff(), listComplaints(status)]);
   const canWrite = can(staff.role, "complaints.write");
   const showPhone = can(staff.role, "customers.view_phone");
+  const canQc = can(staff.role, "quality.write");
+  const links = await complaintLinks(rows.map((r) => r.id));
 
   return (
     <>
@@ -37,6 +42,8 @@ export default async function ComplaintsPage({ searchParams }: { searchParams: P
           {rows.map((c) => {
             const responseBadge = complaintResponseBadge(c);
             const phone = c.contactPhone ? normalizeVnPhone(c.contactPhone) : null;
+            const link = links.get(c.id);
+            const linked = link ? [...link.ncrs.map((x) => ({ ...x, href: `/admin/chat-luong/ncr/${x.id}` })), ...link.capas.map((x) => ({ ...x, href: `/admin/chat-luong/capa/${x.id}` })), ...link.rechecks.map((x) => ({ ...x, href: `/admin/chat-luong/phieu-kiem/${x.id}` }))] : [];
             return (
               <article key={c.id} className="border border-line bg-paper p-5">
                 <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -48,6 +55,33 @@ export default async function ComplaintsPage({ searchParams }: { searchParams: P
                   {phone && <span className="ml-auto">{showPhone ? displayPhone(phone) : maskPhone(phone)}</span>}
                 </div>
                 <p className="mt-3">{c.symptoms}</p>
+                {(linked.length > 0 || canQc) && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                    {linked.map((x) => (
+                      <Link key={x.id} href={x.href} className="inline-flex min-h-11 items-center font-mono underline underline-offset-4">
+                        {x.code}
+                      </Link>
+                    ))}
+                    {canQc && (
+                      <>
+                        {(link?.ncrs.length ?? 0) === 0 && (
+                          <ActionForm action={createNcrFromComplaintAction} submitLabel="Tạo NCR" submitClassName="btn btn-outline min-h-11" inline>
+                            <input type="hidden" name="complaintId" value={c.id} />
+                          </ActionForm>
+                        )}
+                        <ActionForm action={createCapaFromComplaintAction} submitLabel="Tạo CAPA" submitClassName="btn btn-outline min-h-11" inline>
+                          <input type="hidden" name="complaintId" value={c.id} />
+                        </ActionForm>
+                        {link?.lotId && (
+                          <ActionForm action={openRecheckAction} submitLabel="Kiểm lại mẫu lưu" submitClassName="btn btn-outline min-h-11" inline>
+                            <input type="hidden" name="complaintId" value={c.id} />
+                            <input type="hidden" name="lotId" value={link.lotId} />
+                          </ActionForm>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
                 {canWrite ? (
                   <ActionForm action={complaintAction} submitLabel="Lưu" className="mt-4 grid gap-3 border-t border-line pt-4 md:grid-cols-[10rem_1fr_1fr_auto] md:items-end">
                     <input type="hidden" name="id" value={c.id} />

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { can, ROLE_LABEL } from "@/modules/auth/rules";
+import { can, ROLE_LABEL, type Permission } from "@/modules/auth/rules";
 import { requireStaff } from "@/modules/auth/service";
 import { logoutAction } from "../dang-nhap/actions";
-import { AdminNav } from "./_components/nav";
+import { AdminNav, type NavGroup } from "./_components/nav";
 
 // Mọi trang quản trị đi qua đây: kiểm tra phiên theo từng request.
 export const dynamic = "force-dynamic";
@@ -12,14 +12,80 @@ export const metadata: Metadata = { title: { default: "Quản trị", template: 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const staff = await requireStaff();
 
-  const groups = [
+  // Menu theo 00-tong-quan.md mục 9. Mục cần quyền chỉ hiện khi có quyền; nhóm rỗng thì ẩn.
+  const has = (p: Permission) => can(staff.role, p);
+  const groups: NavGroup[] = [
     {
       label: "Bán hàng",
       items: [
         { href: "/admin", label: "Tổng quan" },
         { href: "/admin/don-hang", label: "Đơn hàng" },
+        { href: "/admin/ban-hang/dong-goi", label: "Đóng gói" },
+        { href: "/admin/ban-hang/doi-tra", label: "Đổi trả" },
         { href: "/admin/khach-hang", label: "Khách hàng" },
+        { href: "/admin/ban-hang/dai-ly", label: "Đại lý" },
+        { href: "/admin/ban-hang/kenh", label: "Kênh và bảng giá" },
+        { href: "/admin/ban-hang/bang-gia", label: "Bảng giá" },
+        { href: "/admin/ban-hang/bao-cao", label: "Báo cáo bán hàng" },
         { href: "/admin/danh-gia", label: "Đánh giá" },
+      ],
+    },
+    {
+      label: "Kho",
+      items: [
+        { href: "/admin/kho", label: "Tồn kho" },
+        { href: "/admin/kho/nhap", label: "Nhập kho" },
+        { href: "/admin/kho/xuat", label: "Xuất kho" },
+        { href: "/admin/kho/dieu-chuyen", label: "Điều chuyển" },
+        { href: "/admin/kho/kiem-ke", label: "Kiểm kê" },
+        { href: "/admin/kho/lo", label: "Lô hàng" },
+        { href: "/admin/kho/so-kho", label: "Sổ kho" },
+        { href: "/admin/kho/bao-cao", label: "Báo cáo kho" },
+        { href: "/admin/kho/hang-hoa", label: "Hàng hóa" },
+        { href: "/admin/kho/nha-cung-cap", label: "Nhà cung cấp" },
+        ...(has("inventory.approve") ? [{ href: "/admin/kho/cai-dat", label: "Kho và vị trí" }] : []),
+      ],
+    },
+    {
+      label: "Sản xuất",
+      items: [
+        { href: "/admin/san-xuat", label: "Tổng quan sản xuất" },
+        { href: "/admin/san-xuat/ke-hoach", label: "Kế hoạch" },
+        { href: "/admin/san-xuat/lenh", label: "Lệnh sản xuất" },
+        { href: "/admin/san-xuat/chiet-xuat", label: "Chiết xuất" },
+        ...(has("formulas.view") ? [{ href: "/admin/san-xuat/cong-thuc", label: "Công thức" }] : []),
+        { href: "/admin/san-xuat/hieu-suat", label: "Hiệu suất" },
+      ],
+    },
+    {
+      label: "Chất lượng",
+      items: [
+        { href: "/admin/chat-luong", label: "Tổng quan chất lượng" },
+        { href: "/admin/lo", label: "Lô và kiểm nghiệm" },
+        { href: "/admin/chat-luong/phieu-kiem", label: "Phiếu kiểm" },
+        { href: "/admin/phan-anh", label: "Phản ánh" },
+        { href: "/admin/chat-luong/ncr", label: "Sai lỗi (NCR)" },
+        { href: "/admin/chat-luong/capa", label: "CAPA" },
+        { href: "/admin/chat-luong/truy-xuat", label: "Truy xuất" },
+        { href: "/admin/chat-luong/thu-hoi", label: "Thu hồi" },
+        { href: "/admin/chat-luong/tieu-chuan", label: "Tiêu chuẩn" },
+      ],
+    },
+    {
+      label: "Tài chính",
+      items: [
+        ...(has("finance.view") ? [{ href: "/admin/tai-chinh", label: "Tổng quan tài chính" }] : []),
+        ...(has("finance.view") || has("finance.request") ? [{ href: "/admin/tai-chinh/thu-chi", label: "Thu chi" }] : []),
+        ...(has("finance.view")
+          ? [
+              { href: "/admin/tai-chinh/cong-no", label: "Công nợ" },
+              { href: "/admin/tai-chinh/ngan-sach", label: "Ngân sách" },
+              { href: "/admin/tai-chinh/gia-von", label: "Giá vốn" },
+              { href: "/admin/tai-chinh/lai-lo", label: "Lãi lỗ" },
+              { href: "/admin/tai-chinh/dong-tien", label: "Dòng tiền" },
+              { href: "/admin/tai-chinh/tai-khoan", label: "Tài khoản và hạng mục" },
+            ]
+          : []),
       ],
     },
     {
@@ -27,13 +93,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       items: [
         { href: "/admin/san-pham", label: "Sản phẩm" },
         { href: "/admin/noi-dung", label: "Nội dung" },
-      ],
-    },
-    {
-      label: "Chất lượng",
-      items: [
-        { href: "/admin/lo", label: "Lô và kiểm nghiệm" },
-        { href: "/admin/phan-anh", label: "Phản ánh" },
       ],
     },
     {
@@ -65,7 +124,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </form>
           </div>
         </div>
-        <AdminNav groups={groups} />
+        <AdminNav groups={groups.filter((g) => g.items.length > 0)} />
         <div className="hidden border-t border-bone/10 px-5 py-4 text-xs lg:block">
           <p className="truncate text-bone/90">{staff.name || staff.email}</p>
           <p className="text-bone/50">{ROLE_LABEL[staff.role]}</p>

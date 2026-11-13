@@ -13,8 +13,24 @@ export type Permission =
   | "settings.write"
   | "staff.manage"
   | "audit.view"
-  | "reviews.write";
+  | "reviews.write"
+  // 5 phân hệ ERP (00-tong-quan.md mục 5)
+  | "inventory.write"
+  | "inventory.approve"
+  | "production.write"
+  | "production.approve"
+  | "formulas.view"
+  | "formulas.write"
+  | "quality.write"
+  | "quality.approve"
+  | "sales.write"
+  | "sales.pricing"
+  | "finance.view"
+  | "finance.request"
+  | "finance.write"
+  | "finance.approve";
 
+// Cộng tác viên giữ lots.write (giữ lô, ghi xét nghiệm); duyệt xuất lô và mở lại lô cần quality.approve, chỉ chủ (Q17, duyệt 13/11/2026).
 const COLLABORATOR: readonly Permission[] = [
   "orders.write",
   "products.write",
@@ -24,6 +40,11 @@ const COLLABORATOR: readonly Permission[] = [
   "customers.write",
   "customers.view_phone",
   "reviews.write",
+  "inventory.write",
+  "production.write",
+  "quality.write",
+  "sales.write",
+  "finance.request",
 ];
 
 export const ROLE_LABEL: Record<StaffRole, string> = {

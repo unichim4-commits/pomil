@@ -15,7 +15,8 @@ export const notifications = pgTable("cosmetic_notifications", {
   fileId: uuid("file_id"),
 });
 
-export const lotReleaseStatus = pgEnum("lot_release_status", ["quarantine", "released", "on_hold", "recalled"]);
+// rejected: lô thành phẩm không đạt FQC, không đảo lại được (00 mục 3.2)
+export const lotReleaseStatus = pgEnum("lot_release_status", ["quarantine", "released", "on_hold", "recalled", "rejected"]);
 
 export const lots = pgTable(
   "lots",
@@ -94,6 +95,8 @@ export const retainedSamples = pgTable("retained_samples", {
   units: integer("units").notNull(),
   location: text("location").notNull(),
   keepUntil: date("keep_until").notNull(),
+  // Phiếu xuất mẫu lưu đã lấy chai ra khỏi kho (không FK, tránh vòng import)
+  stockIssueId: uuid("stock_issue_id"),
 });
 
 export const complaintSeverity = pgEnum("complaint_severity", ["mild", "moderate", "severe"]);

@@ -11,7 +11,7 @@ import { createLotAction } from "./actions";
 
 export const metadata: Metadata = { title: "Lô và kiểm nghiệm" };
 
-const TONE = { quarantine: "amber", released: "green", on_hold: "red", recalled: "red" } as const;
+const TONE = { quarantine: "amber", released: "green", on_hold: "red", recalled: "red", rejected: "red" } as const;
 
 export default async function LotsPage() {
   const [staff, lots, products] = await Promise.all([requireStaff(), listLots(), listAllProducts()]);

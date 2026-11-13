@@ -10,13 +10,50 @@ import { countFailedNotifications } from "@/modules/notify/service";
 import { getSeedMode, getSettings } from "@/modules/settings/service";
 import { maskPhone } from "@/lib/phone";
 import { can } from "@/modules/auth/rules";
+import type { AdminAlert } from "@/modules/alerts";
+import { getDb } from "@/db/client";
+import { getAlerts as financeAlerts } from "@/modules/finance/alerts";
+import { getAlerts as inventoryAlerts } from "@/modules/inventory/alerts";
+import { refreshExpiredStock } from "@/modules/inventory/ledger";
+import { getAlerts as productionAlerts } from "@/modules/production/alerts";
+import { getAlerts as qmsAlerts } from "@/modules/qms/alerts";
+import { getAlerts as salesAlerts } from "@/modules/sales/alerts";
 import { Badge, Card, Empty, ORDER_TONE, PageHeader, Stat, Table } from "./_components/ui";
 
 const LOW_STOCK = 20;
 
+const ALERT_MODULE_LABEL: Record<AdminAlert["module"], string> = { kho: "Kho", "san-xuat": "Sản xuất", "chat-luong": "Chất lượng", "ban-hang": "Bán hàng", "tai-chinh": "Tài chính" };
+const ALERT_TONE = { danger: "red", warn: "amber", info: "neutral" } as const;
+const ALERT_ORDER = { danger: 0, warn: 1, info: 2 } as const;
+
+// Cảnh báo 5 phân hệ (00-tong-quan mục 8.7): lỗi một phân hệ thì bỏ qua, không làm hỏng trang
+async function collectAlerts(role: Parameters<typeof inventoryAlerts>[0]): Promise<AdminAlert[]> {
+  const sources = [inventoryAlerts, productionAlerts, qmsAlerts, salesAlerts, financeAlerts];
+  const results = await Promise.all(
+    sources.map((fn) =>
+      fn(role).catch((err: unknown) => {
+        console.error("[admin] getAlerts lỗi", err);
+        return [] as AdminAlert[];
+      }),
+    ),
+  );
+  return results.flat().sort((a, b) => ALERT_ORDER[a.level] - ALERT_ORDER[b.level]);
+}
+
+// R-KHO-27: lô hết hạn rời số bán được; hàm tự bỏ qua nếu vừa chạy trong 60 phút
+async function refreshExpiry(): Promise<void> {
+  try {
+    await refreshExpiredStock(await getDb());
+  } catch (err) {
+    console.error("[admin] refreshExpiredStock lỗi", err);
+  }
+}
+
 export default async function AdminHome({ searchParams }: { searchParams: Promise<{ moi?: string }> }) {
   const [{ moi }, staff] = await Promise.all([searchParams, requireStaff()]);
-  const [stats, byStatus, stages, openComplaints, products, recent, settings, failedNotify, seedMode] = await Promise.all([
+  await refreshExpiry();
+  const [alerts, stats, byStatus, stages, openComplaints, products, recent, settings, failedNotify, seedMode] = await Promise.all([
+    collectAlerts(staff.role),
     dashboardStats(),
     countOrdersByStatus(),
     countByStage(),
@@ -63,6 +100,24 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         <div className="mb-6 border border-[#e3c98f] bg-[#f6ecd5] p-4 text-sm">
           Cửa hàng đang <strong>tạm ngừng nhận đơn</strong>: khách chỉ đăng ký giữ chỗ được. Bật lại trong <Link href="/admin/cai-dat" className="underline">Cài đặt</Link>.
         </div>
+      )}
+
+      {alerts.length > 0 && (
+        <Card title="Cảnh báo vận hành" className="mb-6">
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {alerts.map((a, i) => (
+              <li key={`${a.module}-${i}`}>
+                <Link href={a.href} className="flex min-h-11 items-center justify-between gap-3 border border-line bg-paper px-4 py-2 text-sm hover:border-graphite">
+                  <span>
+                    <span className="text-ink-soft">{ALERT_MODULE_LABEL[a.module]} · </span>
+                    {a.text}
+                  </span>
+                  <Badge tone={ALERT_TONE[a.level]}>{a.count ?? "!"}</Badge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
 
       <div className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

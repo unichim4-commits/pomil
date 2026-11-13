@@ -4,7 +4,7 @@ import { displayPhone, formatDate, formatVnd } from "@/lib/format";
 import { maskPhone } from "@/lib/phone";
 import { can } from "@/modules/auth/rules";
 import { requireStaff } from "@/modules/auth/service";
-import { countByStage, CUSTOMER_PAGE_SIZE, listCustomers, STAGE_LABEL } from "@/modules/customers/admin";
+import { allCustomerTags, countByStage, CUSTOMER_PAGE_SIZE, listCustomers, STAGE_LABEL } from "@/modules/customers/admin";
 import { Badge, Empty, FilterTabs, PageHeader, Pagination, Table } from "../_components/ui";
 
 export const metadata: Metadata = { title: "Khách hàng" };
@@ -12,15 +12,16 @@ export const metadata: Metadata = { title: "Khách hàng" };
 type Stage = keyof typeof STAGE_LABEL;
 const STAGES = Object.keys(STAGE_LABEL) as Stage[];
 
-export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; stage?: string; page?: string }> }) {
+export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; stage?: string; page?: string; nhan?: string }> }) {
   const sp = await searchParams;
   const stage = STAGES.includes(sp.stage as Stage) ? (sp.stage as Stage) : undefined;
   const page = Number(sp.page) || 1;
-  const [staff, { rows, total }, counts] = await Promise.all([requireStaff(), listCustomers({ q: sp.q, stage, page }), countByStage()]);
+  const tag = sp.nhan || undefined;
+  const [staff, { rows, total }, counts, tags] = await Promise.all([requireStaff(), listCustomers({ q: sp.q, stage, page, tag }), countByStage(), allCustomerTags()]);
   const showPhone = can(staff.role, "customers.view_phone");
   const all = Object.values(counts).reduce((a, b) => a + b, 0);
   const href = (params: Record<string, string | undefined>) => {
-    const qs = new URLSearchParams(Object.entries({ stage, q: sp.q, ...params }).filter((e): e is [string, string] => !!e[1]));
+    const qs = new URLSearchParams(Object.entries({ stage, q: sp.q, nhan: tag, ...params }).filter((e): e is [string, string] => !!e[1]));
     return `/admin/khach-hang${qs.size ? `?${qs}` : ""}`;
   };
 
@@ -34,9 +35,19 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           ...STAGES.filter((s) => (counts[s] ?? 0) > 0 || s === "repeat_buyer").map((s) => ({ key: s, label: STAGE_LABEL[s], count: counts[s] ?? 0, href: href({ stage: s, page: undefined }) })),
         ]}
       />
-      <form className="mb-4 flex max-w-md gap-2">
+      <form className="mb-4 flex max-w-2xl flex-wrap gap-2">
         {stage && <input type="hidden" name="stage" value={stage} />}
-        <input name="q" defaultValue={sp.q} placeholder="Tên, số điện thoại hoặc mã giới thiệu" className="field min-h-11 text-sm" />
+        <input name="q" defaultValue={sp.q} placeholder="Tên, số điện thoại hoặc mã giới thiệu" className="field min-h-11 min-w-0 flex-1 basis-56 text-sm" />
+        {tags.length > 0 && (
+          <select name="nhan" defaultValue={tag ?? ""} className="field min-h-11 w-auto text-sm" aria-label="Nhãn">
+            <option value="">Mọi nhãn</option>
+            {tags.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        )}
         <button className="btn btn-outline min-h-11">Tìm</button>
       </form>
       {rows.length === 0 ? (

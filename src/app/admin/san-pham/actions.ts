@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { slugify } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/service";
-import { initialStockProblem, parseStockAdjustment, parseStockDelta, stockReasonProblem } from "@/modules/catalog/rules";
-import { adjustStock, createProduct, findConflicts, getProduct, updateProduct } from "@/modules/catalog/service";
+import { checkDevStage, DEV_STAGES, initialStockProblem, isCategory, parseStockAdjustment, parseStockDelta, resolveDevStage, stockReasonProblem, type DevStage } from "@/modules/catalog/rules";
+import { adjustStock, createProduct, findConflicts, getProduct, updateProduct, type ProductUpdate } from "@/modules/catalog/service";
 import { checkClaims, describeViolations } from "@/modules/content/rules";
 import { saveImage } from "@/modules/files/service";
+import { DISPLAY_UOM, parseQty, type DisplayUom } from "@/modules/inventory/rules";
 import { fail, guard, ok, str, type ActionResult } from "../_lib/result";
 
 const schema = z.object({
@@ -33,6 +34,41 @@ const schema = z.object({
   seoTitle: z.string().trim().max(120),
   seoDescription: z.string().trim().max(300),
 });
+
+// Trường mở rộng của phân hệ Sản xuất (02-san-xuat.md R-SX-1, R-SX-2). Form cũ không gửi khối này thì bỏ qua.
+const NET_UNITS = ["ml", "l", "g", "kg"] as const;
+function parseExtended(formData: FormData): { ok: true; values: Pick<ProductUpdate, "category" | "productVersion" | "netQty" | "netUom" | "packSpec" | "unitsPerCarton" | "barcode" | "devStage">; devStage: DevStage | null } | { ok: false; message: string } {
+  if (!formData.has("productVersion")) return { ok: true, values: {}, devStage: null };
+  const category = str(formData, "category");
+  if (!isCategory(category)) return { ok: false, message: "Nhóm sản phẩm không hợp lệ" };
+  const stageRaw = str(formData, "devStage");
+  if (stageRaw && !(DEV_STAGES as readonly string[]).includes(stageRaw)) return { ok: false, message: "Giai đoạn không hợp lệ" };
+  const productVersion = str(formData, "productVersion") || "v1";
+  if (productVersion.length > 20) return { ok: false, message: "Phiên bản sản phẩm tối đa 20 ký tự" };
+  let netQty: number | null = null;
+  let netUom: "mg" | "ul" | null = null;
+  const netRaw = str(formData, "netQty");
+  if (netRaw) {
+    const unit = str(formData, "netUnit") as (typeof NET_UNITS)[number];
+    if (!NET_UNITS.includes(unit)) return { ok: false, message: "Chọn đơn vị dung tích" };
+    const q = parseQty(netRaw, unit as DisplayUom);
+    if (!q.ok) return { ok: false, message: `Dung tích: ${q.message}` };
+    if (q.qty <= 0) return { ok: false, message: "Dung tích phải lớn hơn 0" };
+    netQty = q.qty;
+    netUom = DISPLAY_UOM[unit as DisplayUom].base as "mg" | "ul";
+  }
+  const cartonRaw = str(formData, "unitsPerCarton");
+  const unitsPerCarton = cartonRaw ? Number(cartonRaw) : null;
+  if (unitsPerCarton !== null && (!Number.isInteger(unitsPerCarton) || unitsPerCarton < 1 || unitsPerCarton > 10_000)) return { ok: false, message: "Số chai mỗi thùng từ 1 đến 10.000" };
+  const packSpec = str(formData, "packSpec");
+  if (packSpec.length > 200) return { ok: false, message: "Quy cách đóng gói tối đa 200 ký tự" };
+  const devStage = (stageRaw || null) as DevStage | null;
+  return {
+    ok: true,
+    devStage,
+    values: { category, productVersion, netQty, netUom, packSpec, unitsPerCarton, barcode: str(formData, "barcode") || null, ...(devStage ? { devStage } : {}) },
+  };
+}
 
 const lines = (text: string) =>
   text
@@ -84,7 +120,11 @@ export async function saveProductAction(_prev: ActionResult, formData: FormData)
       if (file instanceof File && file.size > 0) images.push(await saveImage(file, staff.id));
     }
 
+    const ext = parseExtended(formData);
+    if (!ext.ok) return fail(ext.message);
+
     const values = {
+      ...ext.values,
       name: d.name,
       code: d.code,
       slug,
@@ -107,17 +147,21 @@ export async function saveProductAction(_prev: ActionResult, formData: FormData)
 
     // Tồn kho không đi theo form sửa (tránh ghi đè số đã bán trong lúc mở form).
     // Sửa tồn dùng "Điều chỉnh tồn kho" (adjustStockAction). Chỉ sản phẩm mới mới nhập tồn ban đầu.
+    // R-SX-1: đang phát triển/thử nghiệm mà để đang bán thì vẫn lưu, kèm cảnh báo
+    const stage = resolveDevStage(ext.devStage, id ? ((await getProduct(id))?.devStage ?? null) : null, d.status);
+    const warning = checkDevStage(stage, d.status).warning;
+    const suffix = warning ? ` Lưu ý: ${warning}.` : "";
     if (id) {
       await updateProduct(id, values, staff.id);
       revalidatePath(`/admin/san-pham/${id}`);
       revalidatePath(`/san-pham/${slug}`);
-      return ok("Đã lưu sản phẩm.");
+      return ok(`Đã lưu sản phẩm.${suffix}`);
     }
     const initialStock = Number(str(formData, "initialStock") || "0");
     const stockProblem = initialStockProblem(initialStock);
     if (stockProblem) return fail(stockProblem);
     createdId = await createProduct({ ...values, stock: initialStock }, staff.id);
-    return ok("Đã tạo sản phẩm.");
+    return ok(`Đã tạo sản phẩm.${suffix}`);
   });
   if (createdId) redirect(`/admin/san-pham/${createdId}?moi=1`);
   return result;

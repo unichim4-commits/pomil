@@ -64,6 +64,27 @@
       "when": 1793292349606,
       "tag": "0008_enable_rls_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794411915195,
+      "tag": "0009_erp_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794411928368,
+      "tag": "0010_enable_rls_erp",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794411932369,
+      "tag": "0011_products_dev_stage",
+      "breakpoints": true
     }
   ]
 }

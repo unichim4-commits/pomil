@@ -67,7 +67,8 @@ const BLOCKER_TEXT = (b: ReleaseBlocker): string => {
 
 export async function releaseLotAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   return guard(async () => {
-    const staff = await requirePermission("lots.write");
+    // Duyệt xuất lô: chỉ chủ (quality.approve), chủ dự án duyệt 13/11/2026 (Q17)
+    const staff = await requirePermission("quality.approve");
     const id = str(formData, "lotId");
     const verdict = await releaseLot(id, staff.id);
     revalidatePath(`/admin/lo/${id}`);
@@ -78,9 +79,10 @@ export async function releaseLotAction(_prev: ActionResult, formData: FormData):
 
 export async function holdLotAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   return guard(async () => {
-    const staff = await requirePermission("lots.write");
-    const id = str(formData, "lotId");
     const hold = str(formData, "hold") === "1";
+    // Giữ lô: lots.write. Mở lại lô đang giữ: quality.approve (03-chat-luong.md, mở giữ cần duyệt chất lượng)
+    const staff = await requirePermission(hold ? "lots.write" : "quality.approve");
+    const id = str(formData, "lotId");
     const reason = optStr(formData, "reason");
     if (hold && !reason) return fail("Ghi lý do giữ lô");
     const r = await setLotHold(id, hold, reason, staff.id);

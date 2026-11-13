@@ -1,3 +1,4 @@
+import { CATEGORY_LABEL, DEV_STAGE_LABEL, DEV_STAGES } from "@/modules/catalog/rules";
 import type { Product } from "@/modules/catalog/service";
 import { ActionForm } from "../_components/action-form";
 import { Card } from "../_components/ui";
@@ -12,6 +13,9 @@ const STATUS_HELP = {
 
 export function ProductForm({ product, canWrite }: { product: Product | null; canWrite: boolean }) {
   const p = product;
+  // Dung tích tịnh lưu theo đơn vị gốc (µl, mg); hiện theo ml hoặc g
+  const netUnit = p?.netUom === "mg" ? "g" : "ml";
+  const netValue = p?.netQty ? String(p.netQty / 1000).replace(".", ",") : "";
   const body = (
     <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
       <div className="space-y-6">
@@ -39,6 +43,54 @@ export function ProductForm({ product, canWrite }: { product: Product | null; ca
               )}
             </div>
             <p className="text-xs text-ink-soft">Giá như nhau ở mọi kênh; ưu đãi bằng quà và phí giao, không giảm giá thường trực.</p>
+          </div>
+        </Card>
+
+        <Card title="Sản xuất và đóng gói">
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className="block">
+                <span className="field-label">Nhóm sản phẩm</span>
+                <select name="category" defaultValue={p?.category ?? ""} className="field min-h-11">
+                  <option value="">Chưa phân nhóm</option>
+                  {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="field-label">Giai đoạn</span>
+                <select name="devStage" defaultValue={p?.devStage ?? ""} className="field min-h-11">
+                  {!p && <option value="">Tự chọn theo trạng thái bán</option>}
+                  {DEV_STAGES.map((s) => (
+                    <option key={s} value={s}>
+                      {DEV_STAGE_LABEL[s]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Field label="Phiên bản sản phẩm" name="productVersion" defaultValue={p?.productVersion ?? "v1"} maxLength={20} />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[1fr_6rem_1fr]">
+              <Field label="Dung tích / khối lượng tịnh" name="netQty" inputMode="decimal" defaultValue={netValue} placeholder="100" />
+              <label className="block">
+                <span className="field-label">Đơn vị</span>
+                <select name="netUnit" defaultValue={netUnit} className="field min-h-11">
+                  <option value="ml">ml</option>
+                  <option value="l">l</option>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                </select>
+              </label>
+              <Field label="Mã vạch (EAN-13)" name="barcode" inputMode="numeric" defaultValue={p?.barcode ?? ""} className="font-mono" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Quy cách đóng gói" name="packSpec" defaultValue={p?.packSpec ?? ""} placeholder="Chai PET 100 ml, hộp giấy" />
+              <Field label="Số chai mỗi thùng" name="unitsPerCarton" type="number" min={1} defaultValue={p?.unitsPerCarton ?? ""} />
+            </div>
+            <p className="text-xs text-ink-soft">Kế hoạch sản xuất cần dung tích tịnh để tính lượng bán thành phẩm.</p>
           </div>
         </Card>
 

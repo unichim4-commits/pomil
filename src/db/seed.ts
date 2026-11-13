@@ -10,6 +10,8 @@
 import { eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "./schema";
+import { seedErpMasterData } from "./seed-erp";
+import { seedErpDemo } from "./seed-erp-demo";
 
 type AnyDb = PgDatabase<PgQueryResultHKT, typeof schema>;
 
@@ -23,7 +25,11 @@ export function productionProducts(list: (typeof schema.products.$inferInsert)[]
 
 export async function seedInitialData(db: AnyDb, mode: SeedMode): Promise<boolean> {
   const existing = await db.select({ key: schema.settings.key }).from(schema.settings).where(eq(schema.settings.key, "store"));
-  if (existing.length > 0) return false;
+  if (existing.length > 0) {
+    // DB đã có dữ liệu cũ: vẫn bổ sung dữ liệu nền ERP còn thiếu (chạy nhiều lần được)
+    await seedErpMasterData(db);
+    return false;
+  }
 
   await db.transaction(async (tx) => {
     await tx.insert(schema.settings).values([
@@ -39,9 +45,11 @@ export async function seedInitialData(db: AnyDb, mode: SeedMode): Promise<boolea
       { key: SEED_MODE_KEY, value: { mode, seededAt: new Date().toISOString() } },
     ]);
 
+    // dev_stage theo status như migration 0011 làm với DB cũ: đang bán → commercial
+    const productRows = (mode === "production" ? productionProducts(PRODUCTS) : PRODUCTS).map((p) => ({ ...p, devStage: p.status === "active" ? ("commercial" as const) : ("developing" as const) }));
     const inserted = await tx
       .insert(schema.products)
-      .values(mode === "production" ? productionProducts(PRODUCTS) : PRODUCTS)
+      .values(productRows)
       .returning({ id: schema.products.id, code: schema.products.code });
     const tonicId = inserted.find((p) => p.code === "PST")?.id;
 
@@ -60,6 +68,10 @@ export async function seedInitialData(db: AnyDb, mode: SeedMode): Promise<boolea
         publicInfo: { pomeloOrigin: "Bưởi da xanh (điền vùng trồng)", harvestSeason: "(điền mùa vụ)", note: "Lô mẫu để thử quy trình, chưa phải dữ liệu thật." },
       });
     }
+
+    // Dữ liệu nền ERP (mọi chế độ) rồi dữ liệu chạy thử ERP (chỉ demo), sau dữ liệu demo cũ
+    await seedErpMasterData(tx);
+    if (mode === "demo") await seedErpDemo(tx);
   });
   return true;
 }

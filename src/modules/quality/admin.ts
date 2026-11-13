@@ -4,6 +4,7 @@ import { getDb } from "@/db/client";
 import { complaints, lots, lotTests, notifications, orderItems, products } from "@/db/schema";
 import type { LotPublicInfo } from "@/db/schema";
 import { writeAudit } from "@/lib/audit";
+import { syncSellableStock } from "@/modules/inventory/ledger";
 
 export type LotTestType = (typeof lotTests.$inferSelect)["type"];
 
@@ -21,6 +22,7 @@ export const LOT_STATUS_LABEL = {
   released: "Đã duyệt xuất",
   on_hold: "Đang giữ lại",
   recalled: "Thu hồi",
+  rejected: "Không đạt",
 } as const;
 
 export const COMPLAINT_STATUS_LABEL = {
@@ -104,6 +106,8 @@ export async function setLotHold(id: string, hold: boolean, reason: string | nul
     const next = hold ? "on_hold" : "released";
     await tx.update(lots).set({ releaseStatus: next, holdReason: hold ? reason : null }).where(eq(lots.id, id));
     await writeAudit(tx, { actorId, action: hold ? "lot.hold" : "lot.unhold", entity: "lots", entityId: id, before: { releaseStatus: lot.releaseStatus }, after: { releaseStatus: next, reason } });
+    // Sản phẩm bật quản lý kho: số bán được đổi theo lô giữ/bỏ giữ (R-KHO-23)
+    await syncSellableStock(tx, lot.productId);
     return { ok: true };
   });
 }

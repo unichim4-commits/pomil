@@ -6,9 +6,14 @@ import { can } from "@/modules/auth/rules";
 import { requireStaff } from "@/modules/auth/service";
 import { lotNotPublicWarning } from "@/modules/quality/rules";
 import { getLotDetail, LOT_STATUS_LABEL, SEVERITY_LABEL, TEST_LABEL, COMPLAINT_STATUS_LABEL } from "@/modules/quality/admin";
+import { getDb } from "@/db/client";
+import { INSPECTION_STATUS_LABEL, lotQualityExtras, STAGE_LABEL } from "@/modules/qms/admin";
+import { NCR_STATUS_LABEL, QMS_DISCLAIMER } from "@/modules/qms/rules";
+import { lotBalance } from "@/modules/qms/trace";
 import { ActionForm } from "../../_components/action-form";
 import { Badge, Card, Table } from "../../_components/ui";
-import { addTestAction, holdLotAction, notificationAction, publicInfoAction, releaseLotAction, testResultAction } from "../actions";
+import { openFqcAction, retainedSampleAction } from "../../chat-luong/actions";
+import { addTestAction, holdLotAction, notificationAction, publicInfoAction, testResultAction } from "../actions";
 
 export const metadata: Metadata = { title: "Chi tiết lô" };
 
@@ -19,7 +24,12 @@ export default async function LotDetailPage({ params }: { params: Promise<{ id: 
   const [staff, detail] = await Promise.all([requireStaff(), getLotDetail(id)]);
   if (!detail) notFound();
   const { lot, product, tests, notification, complaints } = detail;
+  const db = await getDb();
+  const [qx, balance] = await Promise.all([lotQualityExtras(id, db), lotBalance(db, id)]);
   const canWrite = can(staff.role, "lots.write");
+  const canQc = can(staff.role, "quality.write");
+  const canApprove = can(staff.role, "quality.approve");
+  const pendingFqc = qx.inspections.find((i) => i.stage === "fqc" && i.status === "pending");
   const info = lot.publicInfo;
   const notPublicWarning = lotNotPublicWarning(lot);
 
@@ -31,10 +41,14 @@ export default async function LotDetailPage({ params }: { params: Promise<{ id: 
       <div className="mb-8 mt-3 flex flex-wrap items-center gap-4">
         <h1 className="font-mono text-2xl">{lot.lotNo}</h1>
         <Badge tone={lot.releaseStatus === "released" ? "green" : lot.releaseStatus === "quarantine" ? "amber" : "red"}>{LOT_STATUS_LABEL[lot.releaseStatus]}</Badge>
+        {qx.trialFormula && <Badge tone="dark">Công thức thử nghiệm</Badge>}
         <span className="text-sm text-ink-soft">
           {product?.name} · công thức {lot.formulaVersion} · {lot.unitsProduced} chai
         </span>
-        <div className="ml-auto flex gap-3 text-sm">
+        <div className="ml-auto flex flex-wrap gap-3 text-sm">
+          <Link href={`/admin/chat-luong/truy-xuat?ma=${encodeURIComponent(lot.lotNo)}`} className="inline-flex min-h-11 items-center underline underline-offset-4">
+            Truy xuất
+          </Link>
           <a href={`/api/lots/${encodeURIComponent(lot.lotNo)}/qr`} target="_blank" className="inline-flex min-h-11 items-center underline underline-offset-4">
             Mã QR cho nhãn ↗
           </a>
@@ -213,15 +227,25 @@ export default async function LotDetailPage({ params }: { params: Promise<{ id: 
             </dl>
           </Card>
 
-          {canWrite && lot.releaseStatus === "quarantine" && (
-            <Card title="Duyệt xuất kho">
-              <p className="mb-4 text-sm text-ink-soft">Hệ thống kiểm tra: vi sinh và kim loại nặng đạt, phiếu công bố còn hạn, lô chưa hết hạn.</p>
-              <ActionForm action={releaseLotAction} submitLabel="Duyệt xuất kho" confirm={`Duyệt xuất kho lô ${lot.lotNo}?`}>
-                <input type="hidden" name="lotId" value={lot.id} />
-              </ActionForm>
+          {lot.releaseStatus === "quarantine" && (
+            <Card title="Kiểm tra thành phẩm (FQC)">
+              <p className="mb-4 text-sm text-ink-soft">
+                Lô chỉ được bán sau khi phiếu FQC được duyệt đạt. Khi duyệt, hệ thống kiểm tra thêm: vi sinh và kim loại nặng đạt, phiếu công bố còn hạn, lô chưa hết hạn.
+              </p>
+              {pendingFqc ? (
+                <Link href={`/admin/chat-luong/phieu-kiem/${pendingFqc.id}`} className="btn btn-primary min-h-11">
+                  Mở {pendingFqc.code}
+                </Link>
+              ) : canQc ? (
+                <ActionForm action={openFqcAction} submitLabel="Mở phiếu FQC">
+                  <input type="hidden" name="lotId" value={lot.id} />
+                </ActionForm>
+              ) : (
+                <p className="text-sm text-ink-soft">Cần quyền ghi chất lượng để mở phiếu FQC.</p>
+              )}
             </Card>
           )}
-          {canWrite && (lot.releaseStatus === "released" || lot.releaseStatus === "on_hold") && (
+          {(lot.releaseStatus === "released" ? canWrite : canApprove) && (lot.releaseStatus === "released" || lot.releaseStatus === "on_hold") && (
             <Card title={lot.releaseStatus === "released" ? "Giữ lô lại" : "Mở lại lô"}>
               <ActionForm
                 action={holdLotAction}
@@ -235,6 +259,91 @@ export default async function LotDetailPage({ params }: { params: Promise<{ id: 
               </ActionForm>
             </Card>
           )}
+
+          <Card title={`Cân đối lô${balance.balanced ? "" : " · chưa khớp"}`}>
+            <dl className="space-y-2 text-sm">
+              {(
+                [
+                  ["Nhập kho", balance.received],
+                  ["Đã bán", balance.sold],
+                  ["Mẫu, kiểm nghiệm", balance.samples],
+                  ["Hủy", balance.scrap],
+                  ["Khách trả, thu hồi", balance.returned],
+                  ["Xuất khác", balance.other],
+                  ["Còn trong kho", balance.onHand],
+                ] as const
+              ).map(([k, v]) => (
+                <div key={k} className="flex justify-between">
+                  <dt className="text-ink-soft">{k}</dt>
+                  <dd>{v} chai</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
+
+          <Card title="Hồ sơ chất lượng">
+            <p className="mb-3 text-xs text-ink-soft">{QMS_DISCLAIMER}</p>
+            {qx.inspections.length === 0 && qx.ncrs.length === 0 ? (
+              <p className="text-sm text-ink-soft">Chưa có phiếu kiểm hay NCR.</p>
+            ) : (
+              <ul className="space-y-1 text-sm">
+                {qx.inspections.map((i) => (
+                  <li key={i.id}>
+                    <Link href={`/admin/chat-luong/phieu-kiem/${i.id}`} className="inline-flex min-h-11 items-center gap-2 underline underline-offset-4">
+                      <span className="font-mono">{i.code}</span> {STAGE_LABEL[i.stage]} · {INSPECTION_STATUS_LABEL[i.status]}
+                    </Link>
+                  </li>
+                ))}
+                {qx.ncrs.map((n) => (
+                  <li key={n.id}>
+                    <Link href={`/admin/chat-luong/ncr/${n.id}`} className="inline-flex min-h-11 items-center gap-2 underline underline-offset-4">
+                      <span className="font-mono">{n.code}</span> {n.title} · {NCR_STATUS_LABEL[n.status]}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <Card title="Mẫu lưu">
+            {qx.samples.length === 0 ? (
+              <p className="text-sm text-ink-soft">Chưa lấy mẫu lưu cho lô này.</p>
+            ) : (
+              <ul className="space-y-1 text-sm">
+                {qx.samples.map((m) => (
+                  <li key={m.id}>
+                    {m.units} chai · {m.location} · giữ đến {formatDate(m.keepUntil)}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {canQc && (
+              <details className="mt-4 border-t border-line pt-3">
+                <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium">Lấy mẫu lưu</summary>
+                <ActionForm action={retainedSampleAction} submitLabel="Lưu mẫu" className="mt-3 space-y-3" resetOnSuccess>
+                  <input type="hidden" name="lotId" value={lot.id} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="block">
+                      <span className="field-label">Số chai</span>
+                      <input name="units" type="number" inputMode="numeric" min={1} defaultValue={2} className="field" />
+                    </label>
+                    <label className="block">
+                      <span className="field-label">Giữ đến</span>
+                      <input type="date" name="keepUntil" defaultValue={lot.expiresOn ?? ""} className="field" />
+                    </label>
+                  </div>
+                  <label className="block">
+                    <span className="field-label">Vị trí lưu</span>
+                    <input name="location" className="field" placeholder="Tủ mẫu lưu, ngăn 2" />
+                  </label>
+                  <label className="block">
+                    <span className="field-label">Ghi chú</span>
+                    <input name="note" className="field" />
+                  </label>
+                </ActionForm>
+              </details>
+            )}
+          </Card>
 
           <Card title="Phiếu công bố của sản phẩm">
             {notification ? (

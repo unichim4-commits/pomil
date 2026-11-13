@@ -16,7 +16,8 @@ async function main() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const seeded = await seedInitialData(db as any, mode);
   const label = mode === "demo" ? "dữ liệu thử, đang BẬT nhận đơn" : "bản chạy thật, đang TẮT nhận đơn";
-  console.log(seeded ? `Đã nạp dữ liệu ban đầu (${label}).` : "Đã có dữ liệu, bỏ qua.");
+  // DB đã có dữ liệu cũ: seedInitialData đã bổ sung dữ liệu nền ERP còn thiếu (kho, tài khoản tiền, kênh, hạng mục, cài đặt erp)
+  console.log(seeded ? `Đã nạp dữ liệu ban đầu (${label}).` : "Đã có dữ liệu, chỉ bổ sung dữ liệu nền ERP còn thiếu.");
   await client.end();
 }
 
