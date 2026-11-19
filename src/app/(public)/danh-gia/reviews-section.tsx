@@ -77,11 +77,19 @@ export async function ReviewsSection({ productId, productSlug }: { productId: st
             </div>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-4 border border-line bg-paper p-6">
-              <p className="text-ink-soft">Đã dùng thử? Đăng nhập để chấm sao và góp ý cho lô sau.</p>
-              <Link href={`/tai-khoan/dang-nhap?tiep=${encodeURIComponent(`/san-pham/${productSlug}#danh-gia`)}`} className="btn btn-primary">
-                Đăng nhập để đánh giá
+              <p className="text-ink-soft">Đã dùng thử? Góp ý không cần tài khoản, kể cả khi bạn mua trên sàn.</p>
+              <Link href={`/gop-y/${productSlug}`} className="btn btn-primary">
+                Góp ý sau khi dùng
               </Link>
             </div>
+          )}
+          {me && (
+            <p className="-mt-6 text-sm text-ink-soft">
+              Muốn góp ý kỹ hơn (số lô, loại da đầu, từng mặt sản phẩm)?{" "}
+              <Link href={`/gop-y/${productSlug}`} className="underline underline-offset-4">
+                Mở bảng góp ý chi tiết
+              </Link>
+            </p>
           )}
 
           {reviews.length > 0 && (
@@ -92,6 +100,7 @@ export async function ReviewsSection({ productId, productSlug }: { productId: st
                     <Stars value={r.rating} />
                     <span className="font-medium">{r.reviewer}</span>
                     {r.verifiedPurchase && <span className="eyebrow text-[0.65rem] text-rind">Đã mua</span>}
+                    {r.hasLot && <span className="eyebrow text-[0.65rem] text-ink-soft">Có số lô</span>}
                     <span className="text-ink-soft">{formatDate(r.createdAt)}</span>
                   </div>
                   <p className="mt-3 leading-relaxed">{r.comment}</p>

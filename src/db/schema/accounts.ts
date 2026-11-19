@@ -1,5 +1,6 @@
-import { boolean, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { products } from "./catalog";
+import { lots } from "./quality";
 import { customers } from "./customers";
 
 // Tài khoản khách trên website: đăng nhập bằng số điện thoại và mật khẩu.
@@ -47,9 +48,36 @@ export const productReviews = pgTable(
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    accountId: uuid("account_id")
-      .notNull()
-      .references(() => customerAccounts.id, { onDelete: "cascade" }),
+    // Trống khi khách góp ý không đăng nhập (trang /gop-y, ví dụ khách mua trên sàn quét QR)
+    accountId: uuid("account_id").references(() => customerAccounts.id, { onDelete: "cascade" }),
+    guestName: text("guest_name"),
+    // E.164, chỉ có khi khách tự điền
+    contactPhone: text("contact_phone"),
+    // Lô khớp đúng sản phẩm; số khách gõ giữ ở reportedLotNo kể cả khi không khớp
+    lotId: uuid("lot_id").references(() => lots.id),
+    reportedLotNo: text("reported_lot_no"),
+    // Mua ở đâu: web | tiktok | shopee | zalo | qua_tang | khac
+    channel: text("channel"),
+    ageRange: text("age_range"),
+    scalpType: text("scalp_type"),
+    // Điều khách để ý trước khi dùng, thói quen ảnh hưởng da đầu (khóa trong reviews/rules.ts)
+    concerns: jsonb("concerns").$type<string[]>().notNull().default([]),
+    habits: jsonb("habits").$type<string[]>().notNull().default([]),
+    usageFrequency: text("usage_frequency"),
+    // So với trước khi dùng: de_chiu_hon | nhu_cu | kem_hon | chua_ro
+    comparedBefore: text("compared_before"),
+    // nhe_qua | vua | dam_qua
+    scentIntensity: text("scent_intensity"),
+    // Chấm 1–5 từng mặt: texture, dryness, ease, packaging, value
+    aspectRatings: jsonb("aspect_ratings").$type<Record<string, number>>().notNull().default({}),
+    // Khả năng giới thiệu cho bạn bè 0–10
+    nps: integer("nps"),
+    // Khách đồng ý để Pomil gọi hoặc nhắn hỏi thêm
+    followUpConsent: boolean("follow_up_consent").notNull().default(false),
+    // Phần nhân viên: nhãn vấn đề, tình trạng cải tiến, đã làm gì
+    issueTags: jsonb("issue_tags").$type<string[]>().notNull().default([]),
+    actionStatus: text("action_status").notNull().default("chua_xu_ly"),
+    actionTaken: text("action_taken"),
     // 1–5 sao
     rating: integer("rating").notNull(),
     // Mùi hương 1–5
@@ -74,5 +102,6 @@ export const productReviews = pgTable(
   (t) => [
     uniqueIndex("product_reviews_account_product_uq").on(t.accountId, t.productId),
     index("product_reviews_product_status_idx").on(t.productId, t.status),
+    index("product_reviews_lot_idx").on(t.lotId),
   ],
 );

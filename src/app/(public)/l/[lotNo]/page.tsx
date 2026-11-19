@@ -112,7 +112,12 @@ export default async function LotPage({ params }: Props) {
         <p className="mt-3">Không làm mọc tóc. Không trị rụng tóc. Giúp da đầu dịu và thoáng.</p>
       </div>
 
-      <Link href={`/phan-anh?lot=${encodeURIComponent(lot.lotNo)}`} className="btn btn-outline mt-6 w-full">
+      {lot.productSlug && (
+        <Link href={`/gop-y/${lot.productSlug}?lot=${encodeURIComponent(lot.lotNo)}`} className="btn btn-primary mt-6 w-full">
+          Góp ý sau khi dùng
+        </Link>
+      )}
+      <Link href={`/phan-anh?lot=${encodeURIComponent(lot.lotNo)}`} className="btn btn-outline mt-3 w-full">
         Báo vấn đề với lô này
       </Link>
     </div>

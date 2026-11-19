@@ -4,7 +4,19 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { customerPasswordProblem, safeNextPath } from "@/modules/accounts/rules";
 import { composeMessage, recipientsFor } from "@/modules/notify/rules";
-import { isVerifiedPurchase, publicReviewerName, reviewPublishProblem, summarizeReviews } from "@/modules/reviews/rules";
+import {
+  cleanAspectRatings,
+  feedbackStats,
+  guestFeedbackProblem,
+  isVerifiedPurchase,
+  lotMatchesProduct,
+  npsScore,
+  pickKeys,
+  publicReviewerName,
+  reviewPublishProblem,
+  summarizeReviews,
+  ISSUE_TAGS,
+} from "@/modules/reviews/rules";
 
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined, set: () => {}, delete: () => {} }), headers: async () => new Headers() }));
 
@@ -76,6 +88,53 @@ describe("review rules", () => {
 
 const dir = mkdtempSync(path.join(tmpdir(), "pomil-acc-"));
 process.env.PGLITE_DIR = dir;
+
+describe("detailed feedback rules", () => {
+  it("keeps only known keys, once each", () => {
+    expect(pickKeys(ISSUE_TAGS, ["mui", "xxx", "mui", 3, "gia"])).toEqual(["mui", "gia"]);
+  });
+
+  it("keeps aspect scores 1-5 only", () => {
+    expect(cleanAspectRatings({ texture: "4", dryness: 6, ease: 0, packaging: 2.5, value: 5, other: 3 })).toEqual({ texture: 4, value: 5 });
+  });
+
+  it("computes NPS from 0-10 answers", () => {
+    expect(npsScore([10, 9, 8, 6, 0])).toBe(0);
+    expect(npsScore([10, 10, 7])).toBe(67);
+    expect(npsScore([null, 11])).toBeNull();
+  });
+
+  it("asks guests for a name and a phone when they accept follow-up", () => {
+    expect(guestFeedbackProblem({ loggedIn: false, guestName: "A", contactPhone: null, followUpConsent: false })).toMatch(/tên/);
+    expect(guestFeedbackProblem({ loggedIn: false, guestName: "Lan", contactPhone: null, followUpConsent: true })).toMatch(/điện thoại/);
+    expect(guestFeedbackProblem({ loggedIn: false, guestName: "Lan", contactPhone: null, followUpConsent: false })).toBeNull();
+    expect(guestFeedbackProblem({ loggedIn: true, guestName: "", contactPhone: null, followUpConsent: false })).toBeNull();
+  });
+
+  it("matches a lot only to its own product", () => {
+    expect(lotMatchesProduct({ productId: "p1" }, "p1")).toBe(true);
+    expect(lotMatchesProduct({ productId: "p2" }, "p1")).toBe(false);
+    expect(lotMatchesProduct(undefined, "p1")).toBe(false);
+  });
+
+  it("summarizes aspects, NPS, comparison, scent strength and issues", () => {
+    const base = { scentRating: null, scalpFeel: null, wouldRebuy: null };
+    const s = feedbackStats([
+      { ...base, rating: 5, aspectRatings: { texture: 5, dryness: 4 }, nps: 10, comparedBefore: "de_chiu_hon", scentIntensity: "dam_qua", issueTags: ["mui"] },
+      { ...base, rating: 3, aspectRatings: { texture: 4 }, nps: 5, comparedBefore: "nhu_cu", scentIntensity: "vua", issueTags: ["mui", "dau_xit"] },
+      { ...base, rating: 4, aspectRatings: null, nps: null, comparedBefore: "chua_ro", scentIntensity: "nhe_qua", issueTags: null },
+    ]);
+    expect(s.count).toBe(3);
+    expect(s.aspects.texture).toBe(4.5);
+    expect(s.aspects.dryness).toBe(4);
+    expect(s.aspects.value).toBeNull();
+    expect(s.nps).toBe(0);
+    expect(s.better).toBe(0.5);
+    expect(s.scentTooStrong).toBe(1);
+    expect(s.scentTooLight).toBe(1);
+    expect(s.issues[0]).toMatchObject({ tag: "mui", count: 2 });
+  });
+});
 
 describe("accounts and reviews on a real database", () => {
   let tonicId = "";
@@ -149,5 +208,70 @@ describe("accounts and reviews on a real database", () => {
     expect(pub.summary.count).toBe(1);
     expect(pub.reviews[0]).toMatchObject({ reviewer: "Anh T.", verifiedPurchase: true });
     expect(pub.reviews[0]).not.toHaveProperty("suggestion");
+  }, 120_000);
+
+  it("takes detailed guest feedback, checks the lot and tracks the fix", async () => {
+    const { submitReview, listReviewsForAdmin, reviewStatsByProduct, setReviewStatus, publicReviews } = await import("@/modules/reviews/service");
+    const guest = {
+      accountId: null,
+      productId: tonicId,
+      rating: 3,
+      scentRating: 2,
+      scalpFeel: "diu" as const,
+      wouldRebuy: "chua_chac" as const,
+      usedFor: "1_4_tuan" as const,
+      comment: "Khô nhanh, mùi hơi gắt.",
+      suggestion: "Mùi nhẹ hơn",
+      publishConsent: true,
+    };
+    const a = await submitReview({
+      ...guest,
+      details: {
+        guestName: "Nguyễn Lan",
+        contactPhone: "84987654321",
+        lotNo: "pst-271101-01",
+        channel: "shopee",
+        scalpType: "dau",
+        concerns: ["ngua", "bet"],
+        habits: ["mu_bao_hiem"],
+        scentIntensity: "dam_qua",
+        comparedBefore: "de_chiu_hon",
+        aspectRatings: { texture: 4, dryness: 5 },
+        nps: 7,
+        followUpConsent: true,
+      },
+    });
+    expect(a).toMatchObject({ updated: false, lotMatched: true });
+    // Khách không tài khoản gửi lần nữa: dòng mới, lô sai thì giữ chữ khách ghi nhưng không gắn lô
+    const b = await submitReview({ ...guest, details: { guestName: "Nguyễn Lan", lotNo: "PST-991231-09" } });
+    expect(b.reviewId).not.toBe(a.reviewId);
+    expect(b.lotMatched).toBe(false);
+
+    const rows = await listReviewsForAdmin({ productId: tonicId });
+    const rowA = rows.find((r) => r.review.id === a.reviewId)!;
+    expect(rowA.customerId).toBeNull();
+    expect(rowA.lotNo).toBe("PST-271101-01");
+    expect(rowA.review).toMatchObject({ guestName: "Nguyễn Lan", channel: "shopee", concerns: ["ngua", "bet"], nps: 7, followUpConsent: true, actionStatus: "chua_xu_ly" });
+    const rowB = rows.find((r) => r.review.id === b.reviewId)!;
+    expect(rowB.lotNo).toBeNull();
+    expect(rowB.review.reportedLotNo).toBe("PST-991231-09");
+
+    await setReviewStatus({
+      id: a.reviewId,
+      status: "published",
+      staffNote: "Mùi đậm",
+      staffId: "00000000-0000-0000-0000-000000000000",
+      issueTags: ["mui"],
+      actionStatus: "lo_sau",
+      actionTaken: "Giảm tinh dầu từ lô sau",
+    });
+    expect((await listReviewsForAdmin({ actionStatus: "lo_sau" })).map((r) => r.review.id)).toEqual([a.reviewId]);
+
+    const stats = (await reviewStatsByProduct()).find((s) => s.productId === tonicId)!;
+    expect(stats.summary.scentTooStrong).toBe(1);
+    expect(stats.summary.issues[0]).toMatchObject({ tag: "mui", count: 1 });
+
+    const pub = await publicReviews(tonicId);
+    expect(pub.reviews.find((r) => r.id === a.reviewId)).toMatchObject({ reviewer: "Lan N.", hasLot: true, verifiedPurchase: false });
   }, 120_000);
 });

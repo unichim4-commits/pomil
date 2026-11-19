@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, gt } from "drizzle-orm";
 import { getDb, type Tx } from "@/db/client";
-import { complaints, lots, lotTests, notifications } from "@/db/schema";
+import { complaints, lots, lotTests, notifications, products } from "@/db/schema";
 import { writeAudit } from "@/lib/audit";
 import { UserError } from "@/lib/errors";
 import { syncSellableStock } from "@/modules/inventory/ledger";
@@ -111,6 +111,8 @@ export type PublicLotView = {
   status: (typeof lots.$inferSelect)["releaseStatus"];
   info: (typeof lots.$inferSelect)["publicInfo"];
   tests: { type: string; result: string; lab: string | null; reportNo: string | null; testedOn: string | null }[];
+  // Để dẫn sang trang góp ý /gop-y/[slug]; null nếu sản phẩm không còn hiện trên web
+  productSlug: string | null;
 };
 
 export async function getPublicLot(lotNo: string): Promise<{ kind: "missing" } | { kind: "pending" } | { kind: "public"; lot: PublicLotView }> {
@@ -123,6 +125,8 @@ export async function getPublicLot(lotNo: string): Promise<{ kind: "missing" } |
     .select({ type: lotTests.type, result: lotTests.result, lab: lotTests.lab, reportNo: lotTests.reportNo, testedOn: lotTests.testedOn })
     .from(lotTests)
     .where(and(eq(lotTests.lotId, lot.id), eq(lotTests.isPublic, true)));
+  const product = await db.query.products.findFirst({ where: eq(products.id, lot.productId) });
+  const productSlug = product && product.status !== "draft" && product.status !== "archived" ? product.slug : null;
   return {
     kind: "public" as const,
     lot: {
@@ -132,6 +136,7 @@ export async function getPublicLot(lotNo: string): Promise<{ kind: "missing" } |
       status: lot.releaseStatus,
       info: lot.publicInfo,
       tests,
+      productSlug,
     },
   };
 }
